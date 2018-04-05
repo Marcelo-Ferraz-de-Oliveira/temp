@@ -1,0 +1,881 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#import datetime
+#import datetime
+import os
+from wall_e.wall_e_funcoes_utils import *
+from wall_e.wall_e_funcoes_barra import *
+from wall_e.wall_e_funcoes_vap import *
+from wall_e.wall_e_funcoes_book import *
+#root.geometry("350x300+300+300")
+
+
+            
+
+
+root = None        
+app = None
+debug = False
+nome_arquivo = ""
+resultado_trades = None
+def inicializar(is_debug=False,caminho_arquivo=""):
+    global debug
+    global nome_arquivo 
+    global resultado_trades
+    global root
+    global app
+    root = Tk()        
+    app = Janela(root)
+    root.minsize(width=1000,height=500)
+    #root.update()
+    debug = is_debug
+    nome_arquivo = caminho_arquivo
+    if not os.path.exists(nome_arquivo+".pasta"):
+        os.makedirs(nome_arquivo+".pasta")
+    resultado_trades = open(nome_arquivo+".pasta/resultado_trades.csv","w")
+
+def Debug():
+    global debug
+    return debug
+
+
+class Transacao(object):
+    def __init__(self):
+        self.nome = ""
+        self.id = 0
+        self.tempo = 0
+        self.preco = 0.0
+        self.volume = 0
+        self.bid = 0.0
+        self.ask = 0.0
+        self.comprador = 0
+        self.vendedor = 0
+        self.direcao = 0
+        self.direto = 0
+        self.bug = ""
+        self.acm_agr = 0
+        self.tempo_msc = 0
+        self.trade_direcao = 0
+        self.trade_preco = 0.0
+        self.trade_stop = 0.0
+        self.trade_gain = 0.0
+        self.trade_resultado = 0.0
+        self.ordem_orig = 0
+        self.vol_ts = 0#volume total por segundo
+        self.vol_vs = 0#volume de venda por segundo
+        self.vol_cs = 0#volume de compra por segundo
+    def __add_corretora(self,codigo):
+        pass
+    def get_corretora(self,codigo):
+        pass
+    def add_vol_corretora(self,codigo,volume,direcao,agressao):
+        pass
+            
+                
+
+
+class Trade(object):
+    def __init__(self):
+        self.direcao = "I"
+        self.preco = 0.0
+        self.stop = 0.0
+        self.gain = 0.0
+        self.fator = 0.0025
+        self.resultado = 0
+        self.dinheiro = 25000
+        self.acumulado_atual = 0
+
+class Ativos(object):
+    def __init__(self,ativo,com_bruto = False,com_logfile = True,step = 0.01):
+        #armazena a agressão acumulada
+        #é atualizada em toda linha que há uma atualização de direção ("V" ou "A")
+        self.transacao_atual = Trade()
+        #self.agr_acumulada = 0
+        self.novo_negocio = False
+        self.mudou_bid_ask = ""
+        self.transacao = []
+        self.ind_transacao = 0
+        self.book_cancelado = []
+        self.dado_bruto = [0]*200
+        self.book = Book_completo()
+        self.vap = VAP()
+        self.agr_real = 0
+        self.logfile = open(nome_arquivo+".pasta"+"/"+str(ativo)+".csv","w")
+        self.logvap = open(nome_arquivo+".pasta"+"/"+str(ativo)+"VAP.csv","w")
+        self.logtempo = open(nome_arquivo+".pasta"+"/"+str(ativo)+"TEMPO.csv","w")
+        self.logcandle = open(nome_arquivo+".pasta"+"/"+str(ativo)+"CANDLE.csv","w")
+        self.ind_acumulado = ["I",0]
+        self.ind_boletada = [0.0,0]
+        self.timeslot = [0,[0]]#tempo epoch em segundos / indice da variável transacao
+        self.acm_min = 0
+        self.acm_max = 0
+        self.interv_tempo = []
+        self.ultimos_5 = 0
+        self.ultimos_5_hora_i = 0
+        self.ultimos_5_hora_f = 0
+        self.primeira_hora = 0
+        self.acm_total = 0
+        self.step = step
+        self.barras = Barras(5,self.step)
+        for x in range (0,68400):#quantidade de segundos em 19 horas:
+            self.interv_tempo.append([])          
+        if com_bruto:
+            if not os.path.exists("/wall_e/"+str(datetime.datetime.utcnow().day)+"-"+str(datetime.datetime.utcnow().month)+"-"+str(datetime.datetime.utcnow().year)):
+                os.makedirs("/wall_e/"+str(datetime.datetime.utcnow().day)+"-"+str(datetime.datetime.utcnow().month)+"-"+str(datetime.datetime.utcnow().year))
+            self.logfile_bruto = open("/wall_e/"+str(datetime.datetime.utcnow().day)+"-"+str(datetime.datetime.utcnow().month)+"-"+str(datetime.datetime.utcnow().year)+"/"+str(ativo)+".log","a")
+        if com_logfile: 
+            self.logfile.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;bug;acumulado agr\r\n")
+            self.logvap.write("preco;compra;venda;direto;leilão\r\n")
+
+class Grupo_ativos(object):
+    def __init__(self):
+        self.ativos = []
+        pass
+    def get_ativo(self,ativo):
+        return getattr(self,ativo, None)
+    def set_ativo(self,ativo,com_bruto = False,com_logfile = True):
+        setattr(self,ativo,Ativos(ativo,com_bruto,com_logfile))
+        self.ativos.append(ativo)
+        if debug: print(str(getattr(self,ativo)))
+    def gravar_linha_bruta(self,ativo,linha):
+        self.get_ativo(ativo).logfile_bruto.write(linha)        
+    
+    def add_book_cancelado(self,papel,preco,volume,direcao,agressor,tempo_msc):
+        ativo = self.get_ativo(papel)
+        pos = len(ativo.transacao)-1
+        ativo 
+        #if debug: print(pos,"-",len(getattr(self,ativo).transacao))
+        while pos > 0:
+            #if debug: print(str(getattr(self,ativo).transacao[pos]))
+            if ativo.transacao[pos][10]=="S":
+                pos = pos - 1
+            else:
+                pos = pos + 1
+                break
+        else:
+            pos = pos + 1
+        while True:
+            if pos < len(ativo.transacao) and pos != 0:
+                if str(preco) == ativo.transacao[pos][3] and str(volume) == ativo.transacao[pos][4] and (str(agressor) == ativo.transacao[pos][7] or str(agressor) == ativo.transacao[pos][8]):
+                    if debug: print("negocio recuperado: "+ativo.transacao[pos][1])
+                    ativo.transacao[pos][10] = "N"
+                    if direcao == "A":
+                        self.atualizar_indicadores(ativo,"AR",pos=pos)
+                    if direcao == "V":
+                        self.atualizar_indicadores(ativo,"VR",pos=pos)
+                    ativo.transacao[pos][11] = "recuperado"
+                    self.fazer_trade(ativo)
+                    break
+
+                else:
+                    pos = pos +1
+            else:
+                ativo.book_cancelado.append([preco,volume,direcao,agressor])        
+                break
+        
+    
+    def fazer_trade(self,ativo):
+        #escora = 150000
+        p = len(ativo.transacao)-1
+        if p > 10 : hora = int(ativo.transacao[p][2])
+        else: hora = 0
+        preco_inicial = 0
+        preco_final = 0
+        acm_inicial = 0
+        acm_final = 0
+        inicio = 1
+        boletada = 0
+        if hora and hora < 165000:
+            #ativo.ultimo_5 = 0
+            for x in ativo.interv_tempo[Str_to_sec(hora):Str_to_sec(hora)]:#hora-301
+                for registro in x :
+                    ativo.ultimo_5 += ativo.transacao[registro-1][23]
+            #       if abs(int(ativo.transacao[registro-1][19])) > abs(boletada): boletada = int(ativo.transacao[registro-1][19])
+                    if inicio: 
+                        preco_inicial = float(ativo.transacao[registro-1][3])
+                        acm_inicial = float(ativo.transacao[registro-1][12])
+                        inicio = 0
+                        
+            #preco_final = float(ativo.transacao[p][3])
+            #acm_final = float(ativo.transacao[p][12])         
+                    
+        
+        if hora > 162500:
+            if ativo.transacao_atual.direcao == "V":
+                ativo.transacao_atual.direcao = "I"
+                quantidade = round(ativo.transacao_atual.dinheiro/ativo.transacao_atual.preco/100)*100
+                volume_financeiro = ativo.transacao_atual.preco*quantidade
+                custo_op = (volume_financeiro*0.00024942)+2.5
+                ativo.transacao_atual.resultado += ((ativo.transacao_atual.preco - float(ativo.book.get_book("V").entrada[0][0]))*quantidade)-(custo_op*2)
+                ativo.transacao_atual.preco = float(ativo.book.get_book("V").entrada[0][0])
+                ativo.transacao_atual.stop = 0
+                ativo.transacao_atual.gain = 0
+                print("Saida de venda:",hora,ativo.transacao[-1][0],ativo.transacao_atual.preco,quantidade,volume_financeiro,custo_op)
+            elif ativo.transacao_atual.direcao == "A":
+                ativo.transacao_atual.direcao = "I"
+                quantidade = round(ativo.transacao_atual.dinheiro/ativo.transacao_atual.preco/100)*100
+                volume_financeiro = ativo.transacao_atual.preco*quantidade
+                custo_op = (volume_financeiro*0.00024942)+2.5
+                ativo.transacao_atual.resultado += ((ativo.transacao_atual.preco - float(ativo.book.get_book("A").entrada[0][0]))*(-1)*quantidade)-(custo_op*2)
+                ativo.transacao_atual.preco = float(ativo.book.get_book("A").entrada[0][0])
+                ativo.transacao_atual.stop = 0
+                ativo.transacao_atual.gain = 0
+                print("Saida de compra:",hora,ativo.transacao[-1][0],ativo.transacao_atual.preco,quantidade,volume_financeiro,custo_op)
+            return True
+        if (ativo.transacao_atual.direcao == "I" and 
+            hora > 105959 and hora < 162000 and 
+            ativo.transacao[-1][12] != 0 and
+            abs(acm_inicial) > 100000 and 
+            abs(acm_inicial-acm_final) > 10000):# and ativo.acm_total/abs(ativo.transacao[-1][12]) < 5:
+            if p > 10:
+                #print(ativo.vap.get_volume(ativo.transacao[p][3],"A")+ ativo.vap.get_volume(ativo.transacao[p][3],"V"))
+                #print(ativo.transacao[-1][12],ativo.acm_total/30)
+                #print(preco_final, preco_inicial)
+                #print(ativo.transacao[-1][12], -ativo.primeira_hora/12)
+                if (
+                ((
+                ativo.ultimo_5 < -(ativo.primeira_hora)/30 and
+                #ativo.transacao[-1][12] < ativo.acm_total/40 and
+                abs(preco_final - preco_inicial) > float(ativo.transacao[p][3])/800 and
+                abs(preco_final - float(ativo.book.get_book("A").entrada[0][0])) < abs(preco_inicial - float(ativo.book.get_book("A").entrada[0][0])) and
+                boletada <= -20000 and
+                #ativo.vap.get_volume(ativo.transacao[p][3],"A")+ ativo.vap.get_volume(ativo.transacao[p][3],"V") < (ativo.primeira_hora)/5 and
+                ativo.book.get_book("A").get_volume_by_pos(0) < 10000 #and
+                #(ativo.book.get_book("V").get_volume_by_pos(1) > escora or
+                #ativo.book.get_book("V").get_volume_by_pos(2) > escora or
+                #ativo.book.get_book("V").get_volume_by_pos(3) > escora or
+                #ativo.book.get_book("V").get_volume_by_pos(4) > escora)
+                #ativo.vap.get_volume(float(ativo.transacao[p][3])+0.01,"A")+ ativo.vap.get_volume(float(ativo.transacao[p][3])+0.01,"V") > 1000000 and
+                #ativo.vap.get_volume(float(ativo.transacao[p][3])+0.02,"A")+ ativo.vap.get_volume(float(ativo.transacao[p][3])+0.02,"V") > 1000000 and
+                )) and
+                ativo.transacao[p-1][9] == "Z" and
+                #float(ativo.transacao[p][3]) > 11 and
+                #float(ativo.transacao[p][18]) > -150 and
+                hora > 101000):
+                    #print("Entrada de venda:",ativo.transacao[-1][0],ativo.ultimo_5, float(ativo.book.get_book("A").entrada[0][0]))
+                    #print("primeira hora ",ativo.primeira_hora)
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(6), ativo.book.get_book("V").get_volume_by_pos(6))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(5), ativo.book.get_book("V").get_volume_by_pos(5))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(4), ativo.book.get_book("V").get_volume_by_pos(4))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(3), ativo.book.get_book("V").get_volume_by_pos(3))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(2), ativo.book.get_book("V").get_volume_by_pos(2))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(1), ativo.book.get_book("V").get_volume_by_pos(1))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(0), ativo.book.get_book("V").get_volume_by_pos(0))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(0), ativo.book.get_book("A").get_volume_by_pos(0))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(1), ativo.book.get_book("A").get_volume_by_pos(1))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(2), ativo.book.get_book("A").get_volume_by_pos(2))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(3), ativo.book.get_book("A").get_volume_by_pos(3))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(4), ativo.book.get_book("A").get_volume_by_pos(4))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(5), ativo.book.get_book("A").get_volume_by_pos(5))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(6), ativo.book.get_book("A").get_volume_by_pos(6))
+
+                    if float(ativo.book.get_book("V").entrada[0][0]) - float(ativo.book.get_book("A").entrada[0][0]) < 0.05:
+                        ativo.transacao_atual.direcao = "V"
+                        ativo.transacao_atual.preco = float(ativo.book.get_book("A").entrada[0][0])
+                        ativo.acm_min = int(ativo.transacao[p][12])
+                        ativo.transacao_atual.acumulado_atual = int(ativo.transacao[p][12])
+                        for x in range(0,5):
+                            #if ativo.book.get_book("V").get_volume_by_pos(x) > escora:
+                            #    ativo.transacao_atual.stop = float(ativo.book.get_book("V").get_preco_by_pos(x))
+                            #    break
+                            ativo.transacao_atual.stop = float(ativo.book.get_book("V").get_preco_by_pos(5))
+                        ativo.acm_min = int(ativo.transacao[p][12])
+                        quantidade = round(ativo.transacao_atual.dinheiro/ativo.transacao_atual.preco/100)*100
+                        volume_financeiro = ativo.transacao_atual.preco*quantidade
+                        custo_op = (volume_financeiro*0.00024942)+2.5
+                        print("Entrada de venda:",hora,ativo.transacao[-1][0],ativo.transacao_atual.preco,quantidade,volume_financeiro,custo_op)
+                    #ativo.transacao_atual.gain = ativo.transacao_atual.preco - ativo.transacao_atual.preco*ativo.transacao_atual.fator
+                if (
+                ((
+                ativo.ultimo_5 > (ativo.primeira_hora)/30 and
+                #ativo.transacao[-1][12] > ativo.acm_total/40 and
+                boletada >= 20000 and
+                abs(preco_final - preco_inicial) > float(ativo.transacao[p][3])/800 and
+                abs(preco_final - float(ativo.book.get_book("A").entrada[0][0])) < abs(preco_inicial - float(ativo.book.get_book("A").entrada[0][0])) and
+                #ativo.vap.get_volume(ativo.transacao[p][3],"A")+ ativo.vap.get_volume(ativo.transacao[p][3],"V") < (ativo.primeira_hora)/5 and
+                ativo.book.get_book("V").get_volume_by_pos(0) < 10000 #and
+                #(ativo.book.get_book("A").get_volume_by_pos(1) > escora or
+                #ativo.book.get_book("A").get_volume_by_pos(2) > escora or
+                #ativo.book.get_book("A").get_volume_by_pos(3) > escora or
+                #ativo.book.get_book("A").get_volume_by_pos(4) > escora)
+                #ativo.vap.get_volume(float(ativo.transacao[p][3])-0.01,"A")+ ativo.vap.get_volume(float(ativo.transacao[p][3])-0.01,"V") > 1000000 and
+                #ativo.vap.get_volume(float(ativo.transacao[p][3])-0.02,"A")+ ativo.vap.get_volume(float(ativo.transacao[p][3])-0.02,"V") > 1000000 and
+                )) and
+                ativo.transacao[p-1][9] != "L" and 
+                #float(ativo.transacao[p][3]) > 11 and
+                #float(ativo.transacao[p][18]) > -150 and
+                hora > 101000):
+                    #print("Entrada de compra:",ativo.transacao[-1][0],ativo.transacao[-1][12], ativo.acm_total/10,float(ativo.book.get_book("V").entrada[0][0]))
+                    #print("primeira hora ",ativo.primeira_hora)
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(6), ativo.book.get_book("V").get_volume_by_pos(6))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(5), ativo.book.get_book("V").get_volume_by_pos(5))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(4), ativo.book.get_book("V").get_volume_by_pos(4))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(3), ativo.book.get_book("V").get_volume_by_pos(3))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(2), ativo.book.get_book("V").get_volume_by_pos(2))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(1), ativo.book.get_book("V").get_volume_by_pos(1))
+                    #print("V",ativo.book.get_book("V").get_preco_by_pos(0), ativo.book.get_book("V").get_volume_by_pos(0))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(0), ativo.book.get_book("A").get_volume_by_pos(0))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(1), ativo.book.get_book("A").get_volume_by_pos(1))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(2), ativo.book.get_book("A").get_volume_by_pos(2))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(3), ativo.book.get_book("A").get_volume_by_pos(3))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(4), ativo.book.get_book("A").get_volume_by_pos(4))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(5), ativo.book.get_book("A").get_volume_by_pos(5))
+                    #print("A",ativo.book.get_book("A").get_preco_by_pos(6), ativo.book.get_book("A").get_volume_by_pos(6))
+                    if float(ativo.book.get_book("V").entrada[0][0]) - float(ativo.book.get_book("A").entrada[0][0]) < 0.05:
+                        ativo.transacao_atual.direcao = "A"
+                        ativo.transacao_atual.preco = float(ativo.book.get_book("V").entrada[0][0])
+                        ativo.transacao_atual.acumulado_atual = int(ativo.transacao[p][12])
+                        for x in range(0,5):
+                            #if ativo.book.get_book("A").get_volume_by_pos(x) > escora:
+                            #    ativo.transacao_atual.stop = float(ativo.book.get_book("A").get_preco_by_pos(x))
+                            #    break
+                            ativo.transacao_atual.stop = float(ativo.book.get_book("A").get_preco_by_pos(5))
+                        ativo.acm_max = int(ativo.transacao[p][12])
+                        quantidade = round(ativo.transacao_atual.dinheiro/ativo.transacao_atual.preco/100)*100
+                        volume_financeiro = ativo.transacao_atual.preco*quantidade
+                        custo_op = (volume_financeiro*0.00024942)+2.5
+                        print("Entrada de compra:",hora,ativo.transacao[-1][0],ativo.transacao_atual.preco,quantidade,volume_financeiro,custo_op)
+                    #ativo.transacao_atual.gain = ativo.transacao_atual.preco + ativo.transacao_atual.preco*ativo.transacao_atual.fator
+        elif ativo.transacao_atual.direcao == "V":
+            if ativo.acm_min > int(ativo.transacao[p][12]): ativo.acm_min = ativo.transacao[p][12] 
+            
+            #if ativo.transacao_atual.stop - ativo.transacao_atual.preco*ativo.transacao_atual.fator*2 > float(ativo.book.get_book("V").entrada[0][0]):
+            #    ativo.transacao_atual.stop = float(ativo.book.get_book("V").entrada[0][0]) + ativo.transacao_atual.preco*ativo.transacao_atual.fator                
+
+            if ((#ativo.ultimo_5 > (ativo.primeira_hora)/40 and
+                 abs(ativo.transacao_atual.acumulado_atual - ativo.transacao[p][12]) > abs(ativo.transacao_atual.acumulado_atual)/5
+                 #preco_final - preco_inicial > float(ativo.transacao[p][3])/400 #and                 
+                 #ativo.vap.get_volume(float(ativo.transacao[p][3]),"A")+ ativo.vap.get_volume(float(ativo.transacao[p][3]),"V") > (ativo.primeira_hora)/5
+                 ) or
+                ativo.transacao_atual.preco - ativo.transacao_atual.preco*ativo.transacao_atual.fator*3 > float(ativo.book.get_book("V").entrada[0][0]) or
+                #boletada >= 50000 #or
+                ativo.transacao_atual.stop < float(ativo.book.get_book("V").entrada[0][0])
+                ):
+                #print(ativo.ultimo_5, preco_final - preco_inicial)
+                ativo.transacao_atual.direcao = "I"
+                quantidade = round(ativo.transacao_atual.dinheiro/ativo.transacao_atual.preco/100)*100
+                volume_financeiro = ativo.transacao_atual.preco*quantidade
+                custo_op = (volume_financeiro*0.00024942)+2.5
+                ativo.transacao_atual.resultado += ((ativo.transacao_atual.preco - float(ativo.book.get_book("V").entrada[0][0]))*quantidade)-(custo_op*2)
+                ativo.transacao_atual.preco = float(ativo.book.get_book("V").entrada[0][0])
+                ativo.transacao_atual.stop = 0
+                ativo.transacao_atual.gain = 0
+                print("Saida de venda:",hora,ativo.transacao[-1][0],ativo.transacao_atual.preco,quantidade,volume_financeiro,custo_op)
+        elif ativo.transacao_atual.direcao == "A":
+            if ativo.acm_max < ativo.transacao[p][12]: ativo.acm_max = ativo.transacao[p][12] 
+            
+            #if ativo.transacao_atual.stop + ativo.transacao_atual.preco*ativo.transacao_atual.fator*2 < float(ativo.book.get_book("A").entrada[0][0]):
+            #    ativo.transacao_atual.stop = float(ativo.book.get_book("A").entrada[0][0]) - ativo.transacao_atual.preco*ativo.transacao_atual.fator               
+            if ((#ativo.ultimo_5 < -(ativo.primeira_hora)/40 and 
+                 abs(ativo.transacao_atual.acumulado_atual - ativo.transacao[p][12]) > abs(ativo.transacao_atual.acumulado_atual)/5
+                 #preco_final - preco_inicial < -float(ativo.transacao[p][3])/400 #and
+                 #ativo.vap.get_volume(float(ativo.transacao[p][3]),"A")+ ativo.vap.get_volume(float(ativo.transacao[p][3]),"V") > (ativo.primeira_hora)/5
+                 ) or
+                #mudar depois para stop no book
+                ativo.transacao_atual.preco + ativo.transacao_atual.preco*ativo.transacao_atual.fator*3 < float(ativo.book.get_book("A").entrada[0][0]) or
+                #boletada <= -50000 #or
+                ativo.transacao_atual.stop > float(ativo.book.get_book("A").entrada[0][0])
+                ):
+
+            #if (ativo.transacao_atual.stop > float(ativo.book.get_book("A").entrada[0][0]) ):#or                ativo.ultimo_5 < -100000):
+                ativo.transacao_atual.direcao = "I"
+                quantidade = round(ativo.transacao_atual.dinheiro/ativo.transacao_atual.preco/100)*100
+                volume_financeiro = ativo.transacao_atual.preco*quantidade
+                custo_op = (volume_financeiro*0.00024942)+2.5
+                ativo.transacao_atual.resultado += ((ativo.transacao_atual.preco - float(ativo.book.get_book("A").entrada[0][0]))*(-1)*quantidade)-(custo_op*2)
+                ativo.transacao_atual.preco = float(ativo.book.get_book("A").entrada[0][0])
+                ativo.transacao_atual.stop = 0
+                ativo.transacao_atual.gain = 0
+                print("Saida de compra:",hora,ativo.transacao[-1][0],ativo.transacao_atual.preco,quantidade,volume_financeiro,custo_op)
+        return True
+                    
+    def add_transacao(self,nome_ativo,*negocio):
+        #global corretoras_dict
+        #corretora_temp = corretoras_dict.copy()
+        ativo = self.get_ativo(nome_ativo)
+        temp = [nome_ativo,#0 - nome do ativo
+                negocio[8],#1 - id do negócio
+                negocio[5],#2 - tempo
+                negocio[2],#3 - preco
+                negocio[7],#4 - volume
+                negocio[3],#5 - bid
+                negocio[4],#6 - ask
+                negocio[62],#7 - comprador
+                negocio[63],#8 - vendedor
+                negocio[132],#9 - direcao
+                negocio[133],#10 - direto
+                negocio[134],#11 - bug
+                negocio[161],#12 - acumulado_agr
+                negocio[150],#13 - tempo_msc
+                ativo.transacao_atual.direcao,#14
+                ativo.transacao_atual.preco,#15
+                ativo.transacao_atual.stop,#16
+                ativo.transacao_atual.gain,#17
+                ativo.transacao_atual.resultado,#18
+                negocio[160],#19 - ordem original
+                negocio[170],#20 - não sei
+                negocio[180],#21 - volume agregado por segundo
+                negocio[181],#22 - volume de venda por segundo
+                negocio[182],#23 - volume de compra por segundo
+                #corretora_temp
+                ]
+        #if negocio[2] != "0" and negocio[132] != "0" and negocio[132] != 0: #and int(negocio[5])<165500:
+            #if temp[9] == "V":
+                #temp[4] = str(int(temp[4])*(-1))
+        ativo.transacao.append(temp)
+        ativo.interv_tempo[Str_to_sec(ativo.transacao[-1][2])].append(int(ativo.transacao[-1][1]))
+        if int(ativo.transacao[-1][2]) < 110000: ativo.primeira_hora += int(ativo.transacao[-1][4])
+        ativo.acm_total += int(ativo.transacao[-1][4])    #input("")
+    
+    def gravar_transacoes(self,ativo,grupo_ativos):
+        for preco in sorted(getattr(self,ativo).vap.precos, key=float):
+            getattr(self,ativo).logvap.write(str(preco)+";")
+            for tipo in getattr(self,ativo).vap.tipos:
+                getattr(self,ativo).logvap.write(str(getattr(self,ativo).vap.get_volume(preco,tipo))+";")
+            getattr(self,ativo).logvap.write("\r\n")
+        getattr(self,ativo).logvap.flush()
+        getattr(self,ativo).logvap.close()
+        for dados in getattr(self,ativo).transacao:
+            for dado in dados:
+                getattr(self,ativo).logfile.write(str(dado)+";")
+            getattr(self,ativo).logfile.write("\r\n")
+        getattr(self,ativo).logfile.flush()
+        getattr(self,ativo).logfile.close()
+        
+        for x in range(Str_to_sec(83000),Str_to_sec(185958)):
+            self.get_ativo(ativo).logtempo.write(Sec_to_str(x)+";")            
+            for dado in self.get_ativo(ativo).interv_tempo[x]:
+                self.get_ativo(ativo).logtempo.write(str(dado)+";")
+            self.get_ativo(ativo).logtempo.write("\r\n")            
+        getattr(self,ativo).logtempo.flush()
+        getattr(self,ativo).logtempo.close()
+        
+        papel = self.get_ativo(ativo)
+        papel.logcandle.write("TEMPO;MINIMO;MAXIMO;ABERTURA;FECHAMENTO;VOL_COMPRA;VOL_VENDA\r\n")
+        inicio = True
+        minimo = 100000000
+        maximo = 0
+        abertura = 0
+        fechamento = 0
+        volume_compra = 0
+        volume_venda = 0
+        for y in range (0,540):
+            papel.logcandle.write(Sec_to_str(Str_to_sec(93000)+(y*60))+";")            
+            volume_compra = 0
+            volume_venda = 0
+            minimo = fechamento
+            maximo = fechamento
+            abertura = fechamento
+            inicio = True
+            for x in range(Str_to_sec(93000)+(y*60),Str_to_sec(93059)+(y*60)):
+                for dado in papel.interv_tempo[x]:
+                    if inicio:
+                        minimo = 100000000
+                        maximo = 0
+                        fechamento = 0
+                        abertura = papel.transacao[dado-1][3]
+                        inicio = False
+                    fechamento = papel.transacao[dado-1][3]
+                    if float(papel.transacao[dado-1][3]) > maximo:
+                        maximo = float(papel.transacao[dado-1][3])
+                    if float(papel.transacao[dado-1][3]) < minimo:
+                        minimo = float(papel.transacao[dado-1][3])
+                    if papel.transacao[dado-1][9] == "A":
+                        volume_compra += int(papel.transacao[dado-1][4])
+                    if papel.transacao[dado-1][9] == "V":
+                        volume_venda += int(papel.transacao[dado-1][4])
+            papel.logcandle.write(str(minimo)+";"+str(maximo)+";"+str(abertura)+";"+str(fechamento)+";"+str(volume_compra)+";"+str(volume_venda)+"\r\n")
+            
+            
+                        
+        
+        
+        #grava o resultado financeiro dos trades
+        resultado_trades = open(nome_arquivo+".pasta/resultado_trades.csv","w")
+        for dados in grupo_ativos.ativos:
+            if self.get_ativo(dados).transacao:
+                resultado = getattr(self,dados).transacao[-1][18]
+                if Debug(): print("---------------------",dados,str(resultado),"---------------------")
+                resultado_trades.write(dados+";"+str(resultado)+";\r\n")
+            else:
+                if Debug(): print("não há negócios em "+dados)
+                pass
+        resultado_trades.flush()
+        resultado_trades.close()
+
+
+    def atualizar_indicadores(self,ativo,direcao,pos=-1):
+        #hora = int(ativo.transacao[pos][2])
+        if len(ativo.transacao) > 1:
+            if ativo.transacao[pos][2] != ativo.transacao[pos-1][2]:
+                ativo.transacao[pos][23] = 0
+                ativo.transacao[pos][22] = 0
+                ativo.transacao[pos][21] = 0
+            else:
+                ativo.transacao[pos][23] = ativo.transacao[pos-1][23]
+                ativo.transacao[pos][22] = ativo.transacao[pos-1][22]
+                ativo.transacao[pos][21] = ativo.transacao[pos-1][21]
+
+        
+        
+        if direcao == "AR":
+            ativo.vap.del_volume(float(ativo.transacao[pos][3]),ativo.transacao[pos][9],int(ativo.transacao[pos][4])) 
+            
+            ativo.barras.add_volume(int(ativo.transacao[pos][4])*(-1),float(ativo.transacao[pos][3]),ativo.transacao[pos][9])            
+                        
+            
+            
+            
+            ativo.transacao[pos][12] = ativo.transacao[pos-1][12] - int(ativo.transacao[pos][4])                        
+            
+            if int(ativo.transacao[pos][2]) == int(ativo.transacao[pos-1][2]):
+                ativo.transacao[pos][22] =  int(ativo.transacao[pos-1][22])-int(ativo.transacao[pos][4])
+             
+            else:
+                ativo.transacao[pos][22] =  int(ativo.transacao[pos][4])*(-1) 
+                            
+            ativo.transacao[pos][9] = "V"
+            #negócio original
+            if (int(ativo.transacao[pos][13]) - int(ativo.transacao[pos-1][13]) < 600000 and 
+                ativo.transacao[pos][8] == ativo.transacao[pos-1][8] and
+                ativo.transacao[pos][9] == ativo.transacao[pos-1][9]
+            ):
+                ativo.transacao[pos][19] = str(int(ativo.transacao[pos][4])*(-1) + int(ativo.transacao[pos-1][19]))
+                ativo.transacao[pos-1][19] = 0
+                #iguala o tempo epoch caso esteja diferente, para permitir a análise por tempo
+                ativo.transacao[pos][13] = ativo.transacao[pos-1][13]
+            else:
+                ativo.transacao[pos][19] = str(int(ativo.transacao[pos][4])*(-1))
+            ativo.vap.add_volume(float(ativo.transacao[pos][3]),"V",int(ativo.transacao[pos][4]))
+            ativo.barras.add_volume(int(ativo.transacao[pos][4]),float(ativo.transacao[pos][3]),ativo.transacao[pos][9])
+
+        if direcao == "VR":
+            ativo.vap.del_volume(float(ativo.transacao[pos][3]),ativo.transacao[pos][9],int(ativo.transacao[pos][4]))
+
+            ativo.barras.add_volume(int(ativo.transacao[pos][4])*(-1),float(ativo.transacao[pos][3]),ativo.transacao[pos][9])
+            
+            ativo.transacao[pos][12] = ativo.transacao[pos-1][12] + int(ativo.transacao[pos][4])
+            
+            if int(ativo.transacao[pos][2]) == int(ativo.transacao[pos-1][2]):
+                ativo.transacao[pos][21] =  int(ativo.transacao[pos-1][21])+int(ativo.transacao[pos][4]) 
+            else:
+                ativo.transacao[pos][21] =  int(ativo.transacao[pos][4]) 
+            
+            
+            ativo.transacao[pos][9] = "A"
+            #negócio original
+            if (int(ativo.transacao[pos][13]) - int(ativo.transacao[pos-1][13]) < 600000 and 
+                ativo.transacao[pos][7] == ativo.transacao[pos-1][7] and
+                ativo.transacao[pos][9] == ativo.transacao[pos-1][9]
+            ):
+                ativo.transacao[pos][19] = str(int(ativo.transacao[pos][19]) + int(ativo.transacao[pos-1][19]))
+                ativo.transacao[pos-1][19] = 0
+                #iguala o tempo epoch caso esteja diferente, para permitir a análise por tempo
+                ativo.transacao[pos][13] = ativo.transacao[pos-1][13]
+            else:
+                ativo.transacao[pos][19] = str(int(ativo.transacao[pos][4]))
+            
+            ativo.vap.add_volume(float(ativo.transacao[pos][3]),"A",int(ativo.transacao[pos][4]))
+            ativo.barras.add_volume(int(ativo.transacao[pos][4]),float(ativo.transacao[pos][3]),ativo.transacao[pos][9])           
+        
+        if direcao == "A":
+                    ativo.transacao[pos][9] = "V"
+                    
+                    if len(ativo.transacao)>1:
+                        ativo.transacao[pos][12] = int(ativo.transacao[pos-1][12]) - int(ativo.transacao[pos][4])
+                        
+                        if int(ativo.transacao[pos][2]) == int(ativo.transacao[pos-1][2]):
+                            ativo.transacao[pos][22] =  int(ativo.transacao[pos-1][22])-int(ativo.transacao[pos][4]) 
+                        else:
+                            ativo.transacao[pos][22] = int(ativo.transacao[pos][4])*(-1)
+                        
+                        
+                        if (int(ativo.transacao[pos][13]) - int(ativo.transacao[pos-1][13]) < 600000 and 
+                            ativo.transacao[pos][8] == ativo.transacao[pos-1][8] and 
+                            ativo.transacao[pos][9] == ativo.transacao[pos-1][9]
+                        ):
+                            ativo.transacao[pos][19] = str(int(ativo.transacao[pos][4])*(-1)+int(ativo.transacao[pos-1][19]))
+                            ativo.transacao[pos-1][19] = 0
+                            #iguala o tempo epoch caso esteja diferente, para permitir a análise por tempo
+                            ativo.transacao[pos][13] = ativo.transacao[pos-1][13]
+                        else:
+                            ativo.transacao[pos][19] = str(int(ativo.transacao[pos][4])*(-1))
+                    else:
+                        ativo.transacao[pos][12] = int(ativo.transacao[pos][4])*(-1)
+                        ativo.transacao[pos][22] = int(ativo.transacao[pos][4])*(-1)
+                    
+                    ativo.vap.add_volume(float(ativo.transacao[pos][3]),ativo.transacao[pos][9],int(ativo.transacao[pos][4]))
+                    #datacomp_anterior = [0,#0
+                    #             0,#1
+                    #             ativo.transacao[-1][7],#2
+                    #             ativo.transacao[-1][8],#3
+                    #             ativo.transacao[-1][13],#4
+                    #             ativo.transacao[-1][4],#5
+                    #             ativo.transacao[-1][19]]#6
+
+            #if hora < 110000: ativo.primeira_hora += int(ativo.transacao[pos][4])
+        if direcao == "V":
+                    ativo.transacao[pos][9] = "A"
+                    
+                    if len(ativo.transacao) > 1:
+                        ativo.transacao[pos][12] = int(ativo.transacao[pos-1][12]) + int(ativo.transacao[pos][4])
+                        
+                        if int(ativo.transacao[pos][2]) == int(ativo.transacao[pos-1][2]):
+                            ativo.transacao[pos][21] =  int(ativo.transacao[pos-1][21])+int(ativo.transacao[pos][4]) 
+                        else:
+                            ativo.transacao[pos][21] = int(ativo.transacao[pos][4])
+                        if (int(ativo.transacao[pos][13]) - int(ativo.transacao[pos-1][13]) < 600000 and 
+                            ativo.transacao[pos][7] == ativo.transacao[pos-1][7] and 
+                            ativo.transacao[pos][9] == ativo.transacao[pos-1][9]
+                        ):
+                            ativo.transacao[pos][19] = str(int(ativo.transacao[pos][4])+int(ativo.transacao[pos-1][19]))
+                            ativo.transacao[pos-1][19] = 0
+                            #iguala o tempo epoch caso esteja diferente, para permitir a análise por tempo
+                            ativo.transacao[pos][13] = ativo.transacao[pos-1][13]
+                        else:
+                            ativo.transacao[pos][19] = ativo.transacao[pos][4]
+                    else:
+                        ativo.transacao[pos][12] = int(ativo.transacao[pos][4])
+                        ativo.transacao[pos][21] = int(ativo.transacao[pos][4])
+                    ativo.vap.add_volume(float(ativo.transacao[pos][3]),ativo.transacao[pos][9],int(ativo.transacao[pos][4]))
+                    
+
+            #if hora < 110000: ativo.primeira_hora += int(ativo.transacao[pos][4])
+        
+        if direcao == "B":
+            ativo.transacao[pos][19] = ativo.transacao[pos][4]
+            ativo.transacao[pos][10] = "S"
+            ativo.transacao[pos][11] = "bugado"
+            if float(ativo.transacao[pos][3]) <= float(ativo.transacao[pos][5]):
+                ativo.transacao[pos][9] = "V"
+                if len(ativo.transacao) > 1:
+                    ativo.transacao[pos][12] = int(ativo.transacao[pos-1][12]) - int(ativo.transacao[pos][4])    
+                    if int(ativo.transacao[pos][2]) == int(ativo.transacao[pos-1][2]):
+                        ativo.transacao[pos][22] =  int(ativo.transacao[pos-1][22])-int(ativo.transacao[pos][4]) 
+                    else:
+                        ativo.transacao[pos][22] = int(ativo.transacao[pos][4])*(-1)
+                else:
+                    ativo.transacao[pos][12] = int(ativo.transacao[pos][4])*(-1)
+                    ativo.transacao[pos][22] = int(ativo.transacao[pos][4])*(-1)    
+                ativo.vap.add_volume(float(ativo.transacao[pos][3]),"V",int(ativo.transacao[pos][4]))    
+            if float(ativo.transacao[pos][3]) >= float(ativo.transacao[pos][6]):
+                ativo.transacao[pos][9] = "A"
+                if len(ativo.transacao) > 1:
+                    ativo.transacao[pos][12] = int(ativo.transacao[pos-1][12]) + int(ativo.transacao[pos][4])         
+                    if int(ativo.transacao[pos][2]) == int(ativo.transacao[pos-1][2]):
+                        ativo.transacao[pos][21] =  int(ativo.transacao[pos-1][21])+int(ativo.transacao[pos][4]) 
+                    else:
+                        ativo.transacao[pos][21] = int(ativo.transacao[pos][4])
+                else:
+                    ativo.transacao[pos][12] = int(ativo.transacao[pos][4])
+                    ativo.transacao[pos][21] = int(ativo.transacao[pos][4])
+                        
+                ativo.vap.add_volume(float(ativo.transacao[pos][3]),"A",int(ativo.transacao[pos][4]))
+
+            #if hora < 110000: ativo.primeira_hora += int(ativo.transacao[pos][4])
+        
+        if direcao == "I":
+            ativo.transacao[pos][19] = ativo.transacao[pos][4]
+            if len(ativo.transacao) > 1: ativo.transacao[pos][12] = ativo.transacao[pos-1][12]
+            ativo.transacao[pos][10] = "S"
+            ativo.transacao[pos][9] = "I"
+            ativo.vap.add_volume(float(ativo.transacao[pos][3]),"I",int(ativo.transacao[pos][4]))
+
+        if direcao == "L":
+            ativo.transacao[pos][10] = "N"
+            ativo.transacao[pos][9] = "L"
+            ativo.transacao[pos][19] = ativo.transacao[-1][4]
+            ativo.vap.add_volume(float(ativo.transacao[-1][3]),"L",int(ativo.transacao[-1][4]))
+
+        #registra a virada do acumulado de agressão
+        if len(ativo.transacao) > 2:
+            #indicador de virada de acumulado de agressão
+            if (ativo.transacao[pos-1][12] < 0 and 
+                ativo.transacao[pos][12] >= 0):
+                ativo.ind_acumulado = ["C",int(ativo.transacao[-1][13])]
+            if (ativo.transacao[pos-1][12] >= 0 and 
+                ativo.transacao[pos][12] < 0):
+                ativo.ind_acumulado = ["V",int(ativo.transacao[-1][13])]
+        
+        
+        ativo.transacao[pos][23] = int(ativo.transacao[pos][21]) + int(ativo.transacao[pos][22])
+
+        
+        
+        #limpa os valores anteriores de volume por segundo
+
+        if len(ativo.transacao) > 1:
+            if ativo.transacao[pos][2] == ativo.transacao[pos-1][2]:
+                ativo.transacao[pos-1][23] = 0
+                ativo.transacao[pos-1][22] = 0
+                ativo.transacao[pos-1][21] = 0
+   
+
+        return True
+
+
+
+
+        
+    def verificar_book_cancelado(self,*linha):
+        
+        y = 0
+        x=linha.index("T")
+        nome_ativo = linha[x+1]
+        ativo = self.get_ativo(nome_ativo)
+        #ativo.dado_bruto[134] = ""
+        #if ativo.dado_bruto[8] == "4118":
+        #    input("")
+        if ativo.dado_bruto[84] == "3":
+            self.add_transacao(linha[x+1],*ativo.dado_bruto)
+            self.atualizar_indicadores(ativo,"L")
+            return True
+        
+        #correção para não aparecerem dados fantasmas
+        #if ativo.transacao:
+        #    if ativo.dado_bruto[5] != ativo.transacao[-1][2]:
+        #        ativo.dado_bruto[180] = 0
+        #        ativo.dado_bruto[181] = 0
+        #        ativo.dado_bruto[182] = 0
+        
+        
+        
+        
+        
+        
+        
+        datacomp = [ativo.dado_bruto[2], 
+                    ativo.dado_bruto[7], 
+                    ativo.dado_bruto[62], 
+                    ativo.dado_bruto[63], 
+                    ativo.dado_bruto[150]]
+
+        if ativo.book_cancelado:#verifica se há algum registro de negócio cancelado do book de ofertas
+            if debug: print(str(datacomp)+str(ativo.book_cancelado[0]))
+            if datacomp[0] == ativo.book_cancelado[y][0] and datacomp[1] == ativo.book_cancelado[y][1] and (datacomp[2] == ativo.book_cancelado[y][3] or datacomp[3] == ativo.book_cancelado[y][3]):
+                #nesse caso há um cancelamento de oferta no book com trade correspondente, se tratando de trade comum
+                #define que não foi direto
+                if debug: print("foi trade comum")
+                ativo.dado_bruto[134] = "0"
+                ativo.dado_bruto[133] = "N"
+                if ativo.book_cancelado[y][2] == "A":
+                    self.add_transacao(linha[x+1],*ativo.dado_bruto)
+                    self.atualizar_indicadores(ativo,"A")
+                    self.fazer_trade(ativo)
+                if ativo.book_cancelado[y][2] == "V":
+                    self.add_transacao(linha[x+1],*ativo.dado_bruto)
+                    self.atualizar_indicadores(ativo,"V")
+                    self.fazer_trade(ativo)
+                del ativo.book_cancelado[y]
+                #self.gravar_transacoes(linha[1])
+                return True
+            else:
+                if debug: print("foi cancelamento")
+                del ativo.book_cancelado[0]
+                return False
+
+        else:
+            #nesse caso, a lista de ofertas canceladas está vazia, se tratando de um direto
+            if ativo.dado_bruto[62] == ativo.dado_bruto[63]:
+                if debug: print("foi DIRETO")
+                self.add_transacao(linha[x+1],*ativo.dado_bruto)
+                self.atualizar_indicadores(ativo,"I")   
+            else:
+                if debug: print("Não foi direto")
+                self.add_transacao(linha[x+1],*ativo.dado_bruto)
+                self.atualizar_indicadores(ativo,"B")   
+                
+            return True
+               
+    def atualizar_dados(self,*linha):
+        #adiciona o valor do timestamp em milisegundos
+        ativo = self.get_ativo(linha[2])
+        ativo.dado_bruto[150] = linha[0]
+        #deleta o timestamp
+        linha = list(linha)
+        del linha[0]
+        d = 3
+        try:
+            
+            while d < len(linha): 
+                ativo.dado_bruto[int(linha[d])]=linha[d+1]
+                if linha[d] == "8":
+                    ativo.novo_negocio = True
+                d = d+2
+        except Exception as e:
+            print(e)
+            print(linha)
+            input("")
+        if ativo.novo_negocio == True:
+            #verifica se a linha é de um negócio válido ou registro complento anterior
+            if ativo.dado_bruto[2] == "0": return 0
+            if ativo.transacao:
+                if ativo.dado_bruto[8] == ativo.transacao[-1][1]: return 0
+            else:
+                if ativo.dado_bruto[8] != "1": return 0
+            #verifica o book cancelado em busca do cancelamento de oferta correspondente ao negócio
+            while self.verificar_book_cancelado(self,*linha) == False:
+                pass
+            #self.add_transacao(linha[1],*ativo.dado_bruto)
+            ativo.novo_negocio = False
+            return 1
+
+    def atualizar_book(self,*linha):
+        #deleta o timestamp
+        linha = list(linha)
+        linha.append(linha[0])
+        del linha[0]
+        ativo = self.get_ativo(linha[1])
+        if linha[2] == "A":
+            ativo.book.get_book(linha[4]).entrada.insert(int(linha[3]),[linha[5],linha[6],linha[7]])
+            ativo.book.get_book(linha[4]).add_volume(linha[5],int(linha[6]))
+        if linha[2] == "U":
+            if linha[4] == "0" and linha[3] == "0":
+                newvol = int(ativo.book.get_book(linha[5]).entrada[int(linha[4])][1])-int(linha[7])
+                if newvol: self.add_book_cancelado(linha[1], linha[6], str(newvol), linha[5], linha[8],linha[-1])
+                if debug: print(str([linha[6],str(newvol),linha[5]]))
+            book_temp = ativo.book.get_book(linha[5]).entrada[int(linha[4])]
+            ativo.book.get_book(linha[5]).del_volume(book_temp[0],int(book_temp[1]))
+            ativo.book.get_book(linha[5]).add_volume(linha[6],int(linha[7]))
+            del ativo.book.get_book(linha[5]).entrada[int(linha[4])]
+            ativo.book.get_book(linha[5]).entrada.insert(int(linha[3]),[linha[6],linha[7],linha[8]])
+        if linha[2] == "D":
+            if linha[3] == "1":
+                tempbook = ativo.book.get_book(linha[4]).entrada[int(linha[5])]
+                if linha[5] == "0":
+                    self.add_book_cancelado(linha[1], tempbook[0], tempbook[1], linha[4], tempbook[2], linha[-1])
+                    if debug: print(str([tempbook[0],tempbook[1],linha[4]]))
+                ativo.book.get_book(linha[4]).del_volume(tempbook[0],int(tempbook[1]))
+                del ativo.book.get_book(linha[4]).entrada[int(linha[5])]
+
+            if linha[3] == "2":
+                for x in range(0,int(linha[5])+1):
+                    tempbook = ativo.book.get_book(linha[4]).entrada[0]
+                    ativo.book.get_book(linha[4]).del_volume(tempbook[0],int(tempbook[1]))
+                    self.add_book_cancelado(linha[1], tempbook[0], tempbook[1], linha[4], tempbook[2], linha[-1])
+                    if debug: print(str([tempbook[0],tempbook[1],linha[4]]))
+                    del ativo.book.get_book(linha[4]).entrada[0]
+            if linha[3] == "3":
+                ativo.book.get_book("A").entrada = []
+                ativo.book.get_book("V").entrada = []
+                ativo.book.get_book("A").pre_book = True
+                ativo.book.get_book("V").pre_book = True                
+        if linha[2] == "E":
+                ativo.book.get_book("A").pre_book = False
+                ativo.book.get_book("V").pre_book = False
+        #self.fazer_trade(ativo)        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

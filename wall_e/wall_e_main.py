@@ -26,9 +26,6 @@ for line in open("wall_e.cfg"):
 workdir = conf["workdir"]#edite inserindo o diretório de trabalho
 username = conf["username"]#edite inserindo seu usuário de acesso ao Crystal DataFeed
 password = conf["password"]#edite inserindo sua senha de acesso ao Crystal DataFeed
-print(workdir, username, password)
-print(conf)
-input("")
 logfile = open(workdir+"/log.txt", "a")
 
 '''
@@ -256,6 +253,7 @@ for ativo in ativos:
             
             except Exception as e:
                 print(e)
+                stdout.flush()
                 raise
 
 

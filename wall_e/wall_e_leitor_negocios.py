@@ -10,9 +10,9 @@ import pexpect
 #Abre o arquivo com os dados brutos
 
 
-datafiles = lista_a_partir(lista_arquivos("/media/sf_Dados_Bolsa_Wall_e"),datetime.date(2018,4,12),datetime.date(2018,4,12))
+datafiles = lista_a_partir(lista_arquivos("/media/sf_Dados_Bolsa_Wall_e"),datetime.date(2017,8,1),datetime.date(2018,3,31))
 arquivos_bugados = open("/media/sf_Dados_Bolsa_Wall_e/arquivos_bugados.txt","a")
-ativos_selecionados = ["PETR4"]
+ativos_selecionados = []#"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
 x = 1000
@@ -49,16 +49,7 @@ for nome_arquivo in datafiles:
     #    ativo.set_ativo(codigo.upper())
     ativos_registrados = []
     ativos_rejeitados2 = []
-    ativos_rejeitados = [#"DI1F19",
-                         #"DI1F20",
-                         #"DI1F21",
-                         #"DI1F22",
-                         #"DI1F23",
-                         #"DI1F24",
-                         #"DI1F25",
-                         #"INDQ17",
-                         #"WINQ17",
-                         ]
+    ativos_rejeitados = []
     #Verificando cada linha do arquivo com dados brutos...
     parar = 0
     if Debug(): print("comecou")
@@ -107,12 +98,13 @@ for nome_arquivo in datafiles:
             if not grupo_ativos.get_ativo(temp[1]):
                 if temp[1] in ativos_selecionados:#comente para rodar todos os ativos no arquivo 
                     if temp[1] not in ativos_rejeitados:    
-                        ativos_registrados.append(temp[1])
                         if "DOL" in temp[1] or "WDO" in temp[1] or "IND" in temp[1] or "WIN" in temp[1]:
-                            grupo_ativos.set_ativo(temp[1],step = 5, x = x)
+                            pass
+                            #grupo_ativos.set_ativo(temp[1],step = 5, x = x)
                         else:
+                            ativos_registrados.append(temp[1])
                             grupo_ativos.set_ativo(temp[1],x = x)                            
-                        #ativos_selecionados = ativos_registrados#descomente para rodar todos os ativos no arquivo
+                            #ativos_selecionados = ativos_registrados#descomente para rodar todos os ativos no arquivo
             if Debug(): print(str(linha))
             if Debug(): print(temp[1])
             if Debug(): print(ativos_registrados)
@@ -137,7 +129,7 @@ for nome_arquivo in datafiles:
                 pass'''
             try:
                 if linha[2] in ativos_selecionados:
-                    grupo_ativos.gravar_bruto(linha[2],linha2)
+                    #grupo_ativos.gravar_bruto(linha[2],linha2)
                     if Debug(): print(str(linha))
                     grupo_ativos.atualizar_dados(*linha)
                     #print(e)
@@ -178,7 +170,7 @@ for nome_arquivo in datafiles:
             #print(str(linha))
             try:
                 if linha[2] in ativos_selecionados:
-                    grupo_ativos.gravar_bruto(linha[2],linha2)
+                    #grupo_ativos.gravar_bruto(linha[2],linha2)
                     if Debug(): print(str(linha))
                     grupo_ativos.atualizar_book(*linha)
                     #print(e)

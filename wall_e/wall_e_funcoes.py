@@ -50,7 +50,7 @@ def inicializar(is_debug=False,caminho_arquivo=""):
 
 
 class Transacao(object):
-    def __init__(self, corretoras = Corretoras()):
+    def __init__(self, corretoras = None ):#Corretoras()):
         self.nome = ""
         self.id = 0
         self.tempo = 0
@@ -74,7 +74,7 @@ class Transacao(object):
         self.vol_ts = 0#volume total por segundo
         self.vol_vs = 0#volume de venda por segundo
         self.vol_cs = 0#volume de compra por segundo
-        self.corretoras = copy.deepcopy(corretoras)
+        #self.corretoras = copy.deepcopy(corretoras)
         
     
 
@@ -413,10 +413,11 @@ class Grupo_ativos(object):
         #global corretoras_dict
         #corretora_temp = corretoras_dict.copy()
         ativo = self.get_ativo(nome_ativo)
-        if ativo.transacao:
+        '''if ativo.transacao:
             temp2 = Transacao(ativo.transacao[-1].corretoras)
         else:
-            temp2 = Transacao()
+            temp2 = Transacao()'''
+        temp2 = Transacao()
         temp2.nome = str(nome_ativo)#0
         temp2.id = int(negocio[8])#1
         temp2.tempo = int(negocio[5])#2
@@ -465,6 +466,7 @@ class Grupo_ativos(object):
             #if temp.direcao == "V":
                 #temp[4] = str(int(temp[4])*(-1))
         ativo.transacao.append(temp2)
+        #print(len(ativo.transacao))
         ativo.interv_tempo[Str_to_sec(temp2.tempo)].append(temp2.id)
         if int(temp2.tempo) < 110000: 
             ativo.primeira_hora += int(temp2.volume)
@@ -488,7 +490,7 @@ class Grupo_ativos(object):
         if direcao == "AR":
             ativo.vap.del_volume(float(ativo.transacao[pos].preco),ativo.transacao[pos].direcao,int(ativo.transacao[pos].volume))             
             ativo.barras.add_volume(int(ativo.transacao[pos].volume)*(-1),float(ativo.transacao[pos].preco),ativo.transacao[pos].direcao)            
-            ativo.transacao[pos].corretoras = copy.deepcopy(ativo.transacao[pos-1].corretoras)
+            #ativo.transacao[pos].corretoras = copy.deepcopy(ativo.transacao[pos-1].corretoras)
             
             
             
@@ -516,7 +518,7 @@ class Grupo_ativos(object):
         if direcao == "VR":
             ativo.vap.del_volume(float(ativo.transacao[pos].preco),ativo.transacao[pos].direcao,int(ativo.transacao[pos].volume))
             ativo.barras.add_volume(int(ativo.transacao[pos].volume)*(-1),float(ativo.transacao[pos].preco),ativo.transacao[pos].direcao)
-            ativo.transacao[pos].corretoras = copy.deepcopy(ativo.transacao[pos-1].corretoras)
+            #ativo.transacao[pos].corretoras = copy.deepcopy(ativo.transacao[pos-1].corretoras)
             
             ativo.transacao[pos].acm_agr = ativo.transacao[pos-1].acm_agr + int(ativo.transacao[pos].volume)
             
@@ -652,7 +654,7 @@ class Grupo_ativos(object):
         ativo.vap.add_volume(ativo.transacao[pos].preco,ativo.transacao[pos].direcao,ativo.transacao[pos].volume)        
         ativo.barras.add_volume(ativo.transacao[pos].volume,ativo.transacao[pos].preco,ativo.transacao[pos].direcao)           
         ativo.transacao[pos].vol_ts = ativo.transacao[pos].vol_cs + ativo.transacao[pos].vol_vs
-        ativo.transacao[pos].corretoras.add_vol_corretora(ativo.transacao[pos].comprador,ativo.transacao[pos].vendedor,ativo.transacao[pos].volume,ativo.transacao[pos].direcao)
+        #ativo.transacao[pos].corretoras.add_vol_corretora(ativo.transacao[pos].comprador,ativo.transacao[pos].vendedor,ativo.transacao[pos].volume,ativo.transacao[pos].direcao)
 
         
         
@@ -748,16 +750,16 @@ class Grupo_ativos(object):
         
         
         ativo.logfile.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;bug;acumulado agr;tempo_msc;trade_direção;trade_preço;trade_stop;trade_gain;trade_resultado;original;volume_compra;volume_venda;volume_total;")
-        if ativo.transacao: 
-            for codigo in ativo.transacao[-1].corretoras.codigos:
-                ativo.logfile.write(str(codigo)+";")
+        #if ativo.transacao: 
+        #    for codigo in ativo.transacao[-1].corretoras.codigos:
+        #        ativo.logfile.write(str(codigo)+";")
         ativo.logfile.write("\r\n")
         
 
         for dado in ativo.transacao:
             ativo.logfile.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.bug)+";"+str(dado.acm_agr)+";"+str(dado.tempo_msc)+";"+str(dado.trade_direcao)+";"+str(dado.trade_preco)+";"+str(dado.trade_stop)+";"+str(dado.trade_gain)+";"+str(dado.trade_resultado)+";"+str(dado.ordem_orig)+";"+str(dado.vol_cs)+";"+str(dado.vol_vs)+";"+str(dado.vol_ts)+";")
-            for codigo in dado.corretoras.codigos:
-                ativo.logfile.write(str(dado.corretoras.get_corretora(codigo).ativo + dado.corretoras.get_corretora(codigo).passivo)+";")
+            #for codigo in dado.corretoras.codigos:
+            #    ativo.logfile.write(str(dado.corretoras.get_corretora(codigo).ativo + dado.corretoras.get_corretora(codigo).passivo)+";")
             ativo.logfile.write("\r\n")
         ativo.logfile.flush()
         ativo.logfile.close()
@@ -873,7 +875,7 @@ class Grupo_ativos(object):
         except Exception as e:
             print(e)
             print(linha)
-            input("")
+            #input("")
         if ativo.novo_negocio == True:
             #verifica se a linha é de um negócio válido ou registro complento anterior
             if ativo.dado_bruto[2] == "0": return 0

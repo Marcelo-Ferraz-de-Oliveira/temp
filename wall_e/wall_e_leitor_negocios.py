@@ -10,8 +10,10 @@ import pexpect
 #Abre o arquivo com os dados brutos
 
 
-datafiles = lista_a_partir(lista_arquivos("/media/sf_Dados_Bolsa_Wall_e"),datetime.date(2018,2,1),datetime.date(2018,3,1))
+datafiles = lista_a_partir(lista_arquivos("/media/sf_Dados_Bolsa_Wall_e"),datetime.date(2018,4,12),datetime.date(2018,4,12))
 arquivos_bugados = open("/media/sf_Dados_Bolsa_Wall_e/arquivos_bugados.txt","a")
+ativos_selecionados = ["PETR4"]
+
 #nome_arquivo = "teste_bruto_2017-11-23"
 x = 1000
 for nome_arquivo in datafiles:
@@ -45,7 +47,6 @@ for nome_arquivo in datafiles:
     if Debug(): print("criando os objetos")
     #for codigo in ativos_registrados:
     #    ativo.set_ativo(codigo.upper())
-    ativos_selecionados = ["PETR4"]
     ativos_registrados = []
     ativos_rejeitados2 = []
     ativos_rejeitados = [#"DI1F19",
@@ -128,12 +129,12 @@ for nome_arquivo in datafiles:
                 #parar = 1
             #    pass
             #print(str(linha))
-            try:
+            '''try:
                 if linha[2] == 'PETR4':
                     print(vars(grupo_ativos.get_ativo(linha[2]).transacao[1]))
                     input("")
             except:
-                pass
+                pass'''
             try:
                 if linha[2] in ativos_selecionados:
                     grupo_ativos.gravar_bruto(linha[2],linha2)

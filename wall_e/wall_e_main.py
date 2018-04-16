@@ -9,11 +9,28 @@ Para entender a sintaxe do sistema, acesse: http://files.cedrotech.com/Downloads
 
 import pexpect
 from datetime import datetime, time
+from sys import stdout
 
-workdir = "/wall_e"#edite inserindo o diretório de trabalho
-username = "mfogoiania"#edite inserindo seu usuário de acesso ao Crystal DataFeed
-password = "102030"#edite inserindo sua senha de acesso ao Crystal DataFeed
+'''
+Faz a leitura do arquivo wall_e.cfg, com as informações sobre o diretório raiz, usuário e senha do sistema
+exemplo de wall_e.cfg:
+workdir:/wall_e
+username:userdeteste
+password:12345
+'''
+conf={}
+for line in open("wall_e.cfg"):
+    (key,val) = line.replace("\n","").split(":")
+    conf[key] = val
+
+workdir = conf["workdir"]#edite inserindo o diretório de trabalho
+username = conf["username"]#edite inserindo seu usuário de acesso ao Crystal DataFeed
+password = conf["password"]#edite inserindo sua senha de acesso ao Crystal DataFeed
+print(workdir, username, password)
+print(conf)
+input("")
 logfile = open(workdir+"/log.txt", "a")
+
 '''
 Classe para receber os dados, adicionar um timestamp no formato unix_epoch em microsegundos ao fina de cada linha, e salvar em arquivo. 
 A classe recebe como parâmetro um file handle e ela própria simula um, uma vez que o pexpect espera receber um file handle como parâmetro
@@ -173,6 +190,7 @@ ativos.append("wdo"+dolar)
 def rodar():
     try:
         print("Conectando em: "+str(datetime.now()))
+        stdout.flush()
         telconn = pexpect.spawn("telnet datafeed1.cedrofinances.com.br 81")
         telconn.logfile_read=TimestampedFile(open(workdir+"/dado_bruto.log","a"))
         telconn.delaybeforesend = 0
@@ -196,17 +214,21 @@ def rodar():
             pass
         except Exception as e:#em caso de outra exceção (como a queda do sistema), a função é chamada novamente para tentar uma reconexão
             print("Falha em: "+str(datetime.now()))
-            print(e)
+            stdout.flush()
+            #print(e)
             rodar()
         if datetime.now().time() >= time(18,30,0):#encerra o sistema às 18:30 - horário de Brasília
             telconn.close()
             break
 
 print("Iniciando em: "+str(datetime.now()))
+stdout.flush()
 rodar()
 
 
 #inicia o sistema para coletar os dados do gqt após âs 18:30
+print("Iniciando o gqt em: "+str(datetime.now()))
+stdout.flush()
 telconn = pexpect.spawn("telnet datafeed1.cedrofinances.com.br 81")
 telconn.logfile_read=TimestampedFile(open(workdir+"/dado_bruto.log","a"))
 telconn.delaybeforesend = 0
@@ -239,7 +261,11 @@ for ativo in ativos:
 
 
 #Datar e compactar os arquivos
+print("Iniciando gravação dos dados em: "+str(datetime.now()))
+stdout.flush()
 print(pexpect.run("mv dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))
 print(pexpect.run("tar -cvjf dado_bruto_"+str(datetime.now().date())+".tar.bz2 dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = 10000))
 print(pexpect.run("truncate -s 0 dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))   
 print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".log dado_bruto.log", cwd=workdir, timeout = -1))   
+print("Encerrado em: "+str(datetime.now()))
+stdout.flush()

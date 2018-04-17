@@ -12,7 +12,7 @@ import pexpect
 
 datafiles = lista_a_partir(lista_arquivos("/media/sf_Dados_Bolsa_Wall_e"),datetime.date(2017,8,1),datetime.date(2018,3,31))
 arquivos_bugados = open("/media/sf_Dados_Bolsa_Wall_e/arquivos_bugados.txt","a")
-ativos_selecionados = []#"PETR4"]
+ativos_selecionados = []##"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
 x = 1000

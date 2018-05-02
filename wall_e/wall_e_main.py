@@ -203,13 +203,17 @@ def rodar():
             telconn.sendline("sqt "+ativo)
             telconn.sendline("bqt "+ativo)
     except:
+        print("Falha na inicialização em: "+str(datetime.now()))
+        stdout.flush()
         rodar()
-    while 1==1:
+    while True:
         try:
             telconn.expect("\n")
-        except pexpect.TIMEOUT:#pode ocorrer timeout caso não sejam obtidas novas informações por algum período de tempo
+        except pexpect.TIMEOUT:#pode ocorrer timeout caso não sejam obtidas nov$
+            print("Timeout em: "+str(datetime.now()))
+            stdout.flush()
             pass
-        except Exception as e:#em caso de outra exceção (como a queda do sistema), a função é chamada novamente para tentar uma reconexão
+        except Exception as e:#em caso de outra exceção (como a queda do sistem$
             print("Falha em: "+str(datetime.now()))
             stdout.flush()
             #print(e)

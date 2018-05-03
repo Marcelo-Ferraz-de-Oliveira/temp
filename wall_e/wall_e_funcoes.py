@@ -119,6 +119,7 @@ class Ativos(object):
 class Grupo_ativos(object):
     def __init__(self):
         self.ativos = []
+        self.contador_hora = 8
         pass
         
     def get_ativo(self,ativo):
@@ -848,6 +849,10 @@ class Grupo_ativos(object):
         ativo.dado_bruto[150] = linha[0]
         #deleta o timestamp
         linha = list(linha)
+        tempo_temp = converter_utc(linha[0])
+        if tempo_temp.time() > datetime.time(self.contador_hora,0,0):
+            print(tempo_temp)
+            self.contador_hora += 1
         del linha[0]
         d = 3
         try:
@@ -867,6 +872,12 @@ class Grupo_ativos(object):
                             input("")
                 if linha[d] == "47":#indica o mercado inscrito, esse dado só é fornecido na primeira linha de sqt
                     ativo.novo_negocio = False
+                lista = ("88","84","83","82","58","59","56","57")
+                dict_temp = {}
+                if linha[d] in lista:
+                    for item in lista:
+                        dict_temp[item] = ativo.dado_bruto[int(item)]
+                    #print(dict_temp,tempo_temp)
                 #if linha[d] in ("88","84","83","82","58","59","56","57"):
                     #print(linha[d],linha[d+1])
                     #input("")

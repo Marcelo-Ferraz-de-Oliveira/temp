@@ -8,18 +8,19 @@ from wall_e.wall_e_funcoes import *
 import pexpect
 
 #Abre o arquivo com os dados brutos
+dir_compactados = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/"
+dir_trabalho = "/media/sf_Dados_Bolsa_Wall_e/"
 
-
-datafiles = lista_a_partir(lista_arquivos("/media/sf_Dados_Bolsa_Wall_e"),datetime.date(2017,8,1),datetime.date(2018,3,31))
-arquivos_bugados = open("/media/sf_Dados_Bolsa_Wall_e/arquivos_bugados.txt","a")
-ativos_selecionados = []##"PETR4"]
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,1),datetime.date(2018,4,4))
+arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
+ativos_selecionados = ["DOLK18","PETR4"]##"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
 x = 1000
 for nome_arquivo in datafiles:
     data = get_data_do_arquivo(nome_arquivo)
     inicio = datetime.datetime.now()  
-    arquivo_completo = "/media/sf_Dados_Bolsa_Wall_e/"+nome_arquivo+".log"
+    arquivo_completo = dir_trabalho+nome_arquivo+".log"
     try:
         a = open(arquivo_completo)
         a.close()
@@ -27,7 +28,7 @@ for nome_arquivo in datafiles:
     except:
         try:
             print("Iniciando descompressão de ",nome_arquivo) 
-            print(pexpect.run("tar -jxvf  "+nome_arquivo+".tar.bz2", cwd="/media/sf_Dados_Bolsa_Wall_e/", timeout = 300000))
+            print(pexpect.run("tar -jxvf  "+nome_arquivo+".tar.bz2 -C "+dir_trabalho, cwd=dir_compactados, timeout = 300000))
         except:
             print("ARQUIVO NÃO EXISTE!!!!")
             continue
@@ -98,10 +99,10 @@ for nome_arquivo in datafiles:
             if not grupo_ativos.get_ativo(temp[1]):
                 if temp[1] in ativos_selecionados:#comente para rodar todos os ativos no arquivo 
                     if temp[1] not in ativos_rejeitados:    
-                        if "DOL" in temp[1] or "WDO" in temp[1] or "IND" in temp[1] or "WIN" in temp[1]:
-                            pass
+                        #if "DOL" in temp[1] or "WDO" in temp[1] or "IND" in temp[1] or "WIN" in temp[1]:
+                        #    pass
                             #grupo_ativos.set_ativo(temp[1],step = 5, x = x)
-                        else:
+                        #else:
                             ativos_registrados.append(temp[1])
                             grupo_ativos.set_ativo(temp[1],x = x)                            
                             #ativos_selecionados = ativos_registrados#descomente para rodar todos os ativos no arquivo

@@ -108,6 +108,9 @@ if now >= datetime(2018,11,30) and now < datetime(2018,12,28):
 #matriz com todos os ativos a serem registrados
 #todos os ativos da composição do IBOVESPA, contratos de Índice e Dólar, padrão e mini, e contratos de DI futuro de maior liquidez
 ativos = ["taee11",
+          "btow3",
+          "cvcb3",
+          "goll4",
           "flry3",
           "mglu3",#que barbaridade!
           "igta3",

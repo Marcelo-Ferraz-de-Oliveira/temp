@@ -88,6 +88,7 @@ class Ativos(object):
         self.novo_negocio = False
         self.mudou_bid_ask = ""
         self.transacao = []
+        self.transacao_gqt = []
         self.ind_transacao = 0
         self.book_cancelado = []
         self.dado_bruto = [0]*200
@@ -96,6 +97,7 @@ class Ativos(object):
         self.agr_real = 0
         self.logfile = open(nome_arquivo+".pasta"+"/"+str(ativo)+".csv","w")
         self.logfilesimples = open(nome_arquivo+".pasta"+"/"+str(ativo)+"_SIMPLES.csv","w")
+        self.loggqt = open(nome_arquivo+".pasta"+"/"+str(ativo)+"_GQT.csv","w")
         self.logvap = open(nome_arquivo+".pasta"+"/"+str(ativo)+"VAP.csv","w")
         self.logtempo = open(nome_arquivo+".pasta"+"/"+str(ativo)+"TEMPO.csv","w")
         self.logcandle = open(nome_arquivo+".pasta"+"/"+str(ativo)+"CANDLE.csv","w")
@@ -765,6 +767,27 @@ class Grupo_ativos(object):
         ativo.logfile.flush()
         ativo.logfile.close()
         
+        
+        ativo.loggqt.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;bug;acumulado agr;tempo_msc;trade_direção;trade_preço;trade_stop;trade_gain;trade_resultado;original;volume_compra;volume_venda;volume_total;")
+        #if ativo.transacao: 
+        #    for codigo in ativo.transacao[-1].corretoras.codigos:
+        #        ativo.logfile.write(str(codigo)+";")
+        ativo.loggqt.write("\r\n")
+        
+
+        for dado in reversed(ativo.transacao_gqt):
+            ativo.loggqt.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.bug)+";"+str(dado.acm_agr)+";"+str(dado.tempo_msc)+";"+str(dado.trade_direcao)+";"+str(dado.trade_preco)+";"+str(dado.trade_stop)+";"+str(dado.trade_gain)+";"+str(dado.trade_resultado)+";"+str(dado.ordem_orig)+";"+str(dado.vol_cs)+";"+str(dado.vol_vs)+";"+str(dado.vol_ts)+";")
+            #for codigo in dado.corretoras.codigos:
+            #    ativo.logfile.write(str(dado.corretoras.get_corretora(codigo).ativo + dado.corretoras.get_corretora(codigo).passivo)+";")
+            ativo.loggqt.write("\r\n")
+        ativo.loggqt.flush()
+        ativo.loggqt.close()
+        
+        
+        
+        
+        
+        
         ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
         ativo.logfilesimples.write("\r\n")
         for dado in ativo.transacao:
@@ -843,6 +866,27 @@ class Grupo_ativos(object):
 
 
                
+    def atualizar_gqt(self,*linha):
+        #deleta o timestamp
+        linha = list(linha)
+        linha.append(linha[0])
+        del linha[0]
+        ativo = self.get_ativo(linha[1])
+        temp2 = Transacao()
+        if linha[2] == 'A':
+            temp2.nome = linha[1]#0
+            temp2.id = int(int(linha[8])/10)#1
+            temp2.tempo = int(linha[3])#2
+            temp2.preco = float(linha[4])#3 - preco
+            temp2.volume = int(linha[7])#4 - volume
+            temp2.comprador = int(linha[5])#7 - comprador
+            temp2.vendedor = int(linha[6])#8 - vendedor
+            temp2.tempo_msc = int(linha[-1])#13 - tempo_msc
+            temp2.direcao = linha[11]
+            temp2.direto = linha[10]
+            ativo.transacao_gqt.append(temp2)
+    
+    
     def atualizar_dados(self,*linha):
         #adiciona o valor do timestamp em milisegundos
         ativo = self.get_ativo(linha[2])

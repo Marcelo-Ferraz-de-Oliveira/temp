@@ -215,6 +215,7 @@ def rodar():
         except pexpect.TIMEOUT:#pode ocorrer timeout caso não sejam obtidas nov$
             print("Timeout em: "+str(datetime.now()))
             stdout.flush()
+            rodar()#verifiquei que só dá timeout quando o sistema buga, então pode rodar de novo
             pass
         except Exception as e:#em caso de outra exceção (como a queda do sistem$
             print("Falha em: "+str(datetime.now()))

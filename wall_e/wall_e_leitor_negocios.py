@@ -11,7 +11,7 @@ import pexpect
 dir_compactados = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/"
 dir_trabalho = "/media/sf_Dados_Bolsa_Wall_e/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,1),datetime.date(2018,4,4))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,4),datetime.date(2018,4,4))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
 ativos_selecionados = ["DOLK18","PETR4"]##"PETR4"]
 
@@ -80,7 +80,7 @@ for nome_arquivo in datafiles:
                 grupo_ativos.fazer_trade(grupo_ativos.get_ativo(codigo),zerar_tudo=True)
             linha = arrumar_linha_timestamp(linha)
             info = nome_arquivo+"-"+str(converter_utc(linha[0]))
-            print(info)
+            print("Falha em: "+info)
             arquivos_bugados.write(info+"\n")
             arquivos_bugados.flush()
             continue
@@ -112,6 +112,16 @@ for nome_arquivo in datafiles:
             if Debug(): print(ativos_selecionados)
             #if Debug(): input("")
         #verifica se a primeira linha corresponde a uma informação de trade
+        if linha[1] == "V":
+            try:
+                if linha[2] in ativos_selecionados:
+                    #grupo_ativos.gravar_bruto(linha[2],linha2)
+                    if Debug(): print(str(linha))
+                    grupo_ativos.atualizar_gqt(*linha)
+                    #print(e)
+            except Exception as e:
+                print(str(e))
+                continue            
         if linha[1] == "T":
             #if linha[3] == "88" and linha[4] == "F":
             #    break

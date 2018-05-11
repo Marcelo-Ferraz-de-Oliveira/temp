@@ -75,6 +75,26 @@ class Transacao(object):
         self.vol_vs = 0#volume de venda por segundo
         self.vol_cs = 0#volume de compra por segundo
         #self.corretoras = copy.deepcopy(corretoras)
+        self.venda1 = 0
+        self.venda2 = 0
+        self.venda3 = 0
+        self.venda4 = 0
+        self.venda5 = 0
+        self.pvenda1 = 0
+        self.pvenda2 = 0
+        self.pvenda3 = 0
+        self.pvenda4 = 0
+        self.pvenda5 = 0
+        self.compra1 = 0
+        self.compra2 = 0
+        self.compra3 = 0
+        self.compra4 = 0
+        self.compra5 = 0
+        self.pcompra1 = 0
+        self.pcompra2 = 0
+        self.pcompra3 = 0
+        self.pcompra4 = 0
+        self.pcompra5 = 0
         
     
 
@@ -788,13 +808,13 @@ class Grupo_ativos(object):
         
         
         
-        #ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
-        #ativo.logfilesimples.write("\r\n")
-        #for dado in ativo.transacao:
-        #    ativo.logfilesimples.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.tempo_msc)+";"+str(dado.pcompra1)+";"+str(dado.compra1)+";"+str(dado.pcompra2)+";"+str(dado.compra2)+";"+str(dado.pcompra3)+";"+str(dado.compra3)+";"+str(dado.pcompra4)+";"+str(dado.compra4)+";"+str(dado.pcompra5)+";"+str(dado.compra5)+";"+str(dado.pvenda1)+";"+str(dado.venda1)+";"+str(dado.pvenda2)+";"+str(dado.venda2)+";"+str(dado.pvenda3)+";"+str(dado.venda3)+";"+str(dado.pvenda4)+";"+str(dado.venda4)+";"+str(dado.pvenda5)+";"+str(dado.venda5))
-        #    ativo.logfilesimples.write("\r\n")
-        #ativo.logfilesimples.flush()
-        #ativo.logfilesimples.close()
+        ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
+        ativo.logfilesimples.write("\r\n")
+        for dado in ativo.transacao:
+            ativo.logfilesimples.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.tempo_msc)+";"+str(dado.pcompra1)+";"+str(dado.compra1)+";"+str(dado.pcompra2)+";"+str(dado.compra2)+";"+str(dado.pcompra3)+";"+str(dado.compra3)+";"+str(dado.pcompra4)+";"+str(dado.compra4)+";"+str(dado.pcompra5)+";"+str(dado.compra5)+";"+str(dado.pvenda1)+";"+str(dado.venda1)+";"+str(dado.pvenda2)+";"+str(dado.venda2)+";"+str(dado.pvenda3)+";"+str(dado.venda3)+";"+str(dado.pvenda4)+";"+str(dado.venda4)+";"+str(dado.pvenda5)+";"+str(dado.venda5))
+            ativo.logfilesimples.write("\r\n")
+        ativo.logfilesimples.flush()
+        ativo.logfilesimples.close()
         
         
         
@@ -880,7 +900,8 @@ class Grupo_ativos(object):
             temp2.comprador = int(linha[5])#7 - comprador
             temp2.vendedor = int(linha[6])#8 - vendedor
             temp2.direcao = linha[11]
-            temp2.direto = linha[10]
+            temp2.direto = "N" if linha[10] == "0" else "S"
+            temp2.bug = 0
             if not ativo.transacao_gqt:
                 ativo.transacao_gqt.append(temp2)
             elif temp2.id < ativo.transacao_gqt[-1].id:
@@ -894,23 +915,26 @@ class Grupo_ativos(object):
                 ativo.transacao_gqt[x].id = x+1    
             for x in range(0,leng):
             #verifica se o id não existe
-                #print(x,temp2.id, len(ativo.transacao)-1,ativo.transacao[x+1].id,temp2.id,ativo.transacao[x].id)
-                #input("")
-                if x in range(4880,4890):
-                    print(x,ativo.transacao[x-1].id+1,ativo.transacao[x].id)
-                    print(x > 0 and int(ativo.transacao[x-1].id) + 1 == x+1 and int(ativo.transacao[x].id) != x+1)
-                    input("")
-                
-                if x > 0 and int(ativo.transacao[x-1].id) + 1 == x+1 and int(ativo.transacao[x].id) != x+1:
+                #if x in range(4880,4890):
+                #    print(x,ativo.transacao[x-1].id+1,ativo.transacao[x].id)
+                #    print(x > 0 and int(ativo.transacao[x-1].id) + 1 == x+1 and int(ativo.transacao[x].id) != x+1)
+                #    input("")
+                #print(x,ativo.transacao[x].id)
+                try:
+                    if x > 0 and int(ativo.transacao[x-1].id) + 1 == x+1 and int(ativo.transacao[x].id) != x+1:
+                        ativo.transacao.insert(x,ativo.transacao_gqt[x])
+                        continue
+                        #print(ativo.transacao[-1].id,x)
+                except:
                     ativo.transacao.insert(x,ativo.transacao_gqt[x])
+                    continue
                 #verifica se é bugado ou direto
                 if ativo.transacao[x].id == x+1:
                     if ativo.transacao[x].bug == 'bugado' or ativo.transacao[x].direcao == "I":
                         ativo.transacao[x].direcao = ativo.transacao_gqt[x].direcao
-                        if ativo.transacao_gqt[x].direto == '0':
-                            ativo.transacao[x].direto = "N"
-                        else: ativo.transacao[x].direto = "S"
-                print(x,ativo.transacao[x].id)
+                        ativo.transacao[x].direto = ativo.transacao_gqt[x].direto
+                        ativo.transacao[x].bug = "recuperado_gqt"
+                #print(x,ativo.transacao[x].id)
                     
     
     def atualizar_dados(self,*linha):

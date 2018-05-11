@@ -11,7 +11,7 @@ import pexpect
 dir_compactados = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/"
 dir_trabalho = "/media/sf_Dados_Bolsa_Wall_e/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,4),datetime.date(2018,4,4))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,1,31),datetime.date(2018,5,11))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
 ativos_selecionados = ["PETR4"]##"PETR4"]
 
@@ -215,7 +215,7 @@ for nome_arquivo in datafiles:
     bruto.close()
     del grupo_ativos
         
-    #print(pexpect.run("rm  "+nome_arquivo+".log", cwd="/media/sf_Dados_Bolsa_Wall_e/", timeout = -1))
+    print(pexpect.run("rm  "+nome_arquivo+".log", cwd=dir_trabalho, timeout = -1))
     print(nome_arquivo, "tempo de gravação: ",datetime.datetime.now()-inicio)
     x += 100
 arquivos_bugados.close()

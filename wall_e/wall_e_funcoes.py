@@ -114,6 +114,8 @@ class Ativos(object):
         self.ultimo_5 = 0
         self.indicador_trade = Indicador()
         self.x = x
+        self.y = 0
+        self.book_quebrado = []
         for x in range (0,68400):#quantidade de segundos em 19 horas:
             self.interv_tempo.append([])           
         self.logvap.write("preco;compra;venda;direto;leilão\r\n")
@@ -156,8 +158,8 @@ class Grupo_ativos(object):
             pos = pos + 1
         while True:
             if pos < tamanho and pos != 0:
-                if float(preco) == ativo.transacao[pos].preco and int(volume) == ativo.transacao[pos].volume and (int(agressor) == ativo.transacao[pos].comprador or int(agressor) == ativo.transacao[pos].vendedor):
-                    if debug: print("negocio recuperado: "+ativo.transacao[pos].id)
+                if float(preco) == ativo.transacao[pos].preco and int(volume) == ativo.transacao[pos].volume and (int(agressor) in (ativo.transacao[pos].comprador, ativo.transacao[pos].vendedor)):
+                    if debug: print("negocio recuperado: "+ativo.transacao[pos].id)                               
                     ativo.transacao[pos].direto = "N"
                     self.atualizar_indicadores(ativo,direcao+"R",pos=pos)
                     ativo.transacao[pos].bug = "recuperado"
@@ -673,9 +675,6 @@ class Grupo_ativos(object):
         return True
 
 
-
-
-        
     def verificar_book_cancelado(self,*linha):
         
         y = 0
@@ -692,19 +691,20 @@ class Grupo_ativos(object):
 
         if ativo.book_cancelado:#verifica se há algum registro de negócio cancelado do book de ofertas
             if Debug(): print(str(ativo.book_cancelado[0]))
-            if ativo.dado_bruto[2] == ativo.book_cancelado[y][0] and ativo.dado_bruto[7] == ativo.book_cancelado[y][1] and (ativo.dado_bruto[62] == ativo.book_cancelado[y][3] or ativo.dado_bruto[63] == ativo.book_cancelado[y][3]):
-                #nesse caso há um cancelamento de oferta no book com trade correspondente, se tratando de trade comum
+            if ativo.dado_bruto[2] == ativo.book_cancelado[y][0] and ativo.dado_bruto[7] == ativo.book_cancelado[y][1] and (ativo.book_cancelado[y][3] in (ativo.dado_bruto[62], ativo.dado_bruto[63])):
+                #nesse caso há um cancelamento de oferta no book com trade correspondente, se tratando de trade comum      
                 #define que não foi direto
                 if debug: print("foi trade comum")
                 ativo.dado_bruto[134] = "0"
                 ativo.dado_bruto[133] = "N"
-                if any(ativo.book_cancelado[y][2] == i for i in ("A","V")):
+                if ativo.book_cancelado[y][2] in ("A","V"):
                     self.add_transacao(linha[x],*ativo.dado_bruto)
                     self.atualizar_indicadores(ativo,ativo.book_cancelado[y][2])
                     self.fazer_trade(ativo)
                 del ativo.book_cancelado[y]
                 #self.gravar_transacoes(linha[1])
                 return True
+                
             else:
                 if debug: print("foi cancelamento")
                 del ativo.book_cancelado[0]
@@ -775,7 +775,7 @@ class Grupo_ativos(object):
         ativo.loggqt.write("\r\n")
         
 
-        for dado in reversed(ativo.transacao_gqt):
+        for dado in ativo.transacao_gqt:
             ativo.loggqt.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.bug)+";"+str(dado.acm_agr)+";"+str(dado.tempo_msc)+";"+str(dado.trade_direcao)+";"+str(dado.trade_preco)+";"+str(dado.trade_stop)+";"+str(dado.trade_gain)+";"+str(dado.trade_resultado)+";"+str(dado.ordem_orig)+";"+str(dado.vol_cs)+";"+str(dado.vol_vs)+";"+str(dado.vol_ts)+";")
             #for codigo in dado.corretoras.codigos:
             #    ativo.logfile.write(str(dado.corretoras.get_corretora(codigo).ativo + dado.corretoras.get_corretora(codigo).passivo)+";")
@@ -788,13 +788,13 @@ class Grupo_ativos(object):
         
         
         
-        ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
-        ativo.logfilesimples.write("\r\n")
-        for dado in ativo.transacao:
-            ativo.logfilesimples.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.tempo_msc)+";"+str(dado.pcompra1)+";"+str(dado.compra1)+";"+str(dado.pcompra2)+";"+str(dado.compra2)+";"+str(dado.pcompra3)+";"+str(dado.compra3)+";"+str(dado.pcompra4)+";"+str(dado.compra4)+";"+str(dado.pcompra5)+";"+str(dado.compra5)+";"+str(dado.pvenda1)+";"+str(dado.venda1)+";"+str(dado.pvenda2)+";"+str(dado.venda2)+";"+str(dado.pvenda3)+";"+str(dado.venda3)+";"+str(dado.pvenda4)+";"+str(dado.venda4)+";"+str(dado.pvenda5)+";"+str(dado.venda5))
-            ativo.logfilesimples.write("\r\n")
-        ativo.logfilesimples.flush()
-        ativo.logfilesimples.close()
+        #ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
+        #ativo.logfilesimples.write("\r\n")
+        #for dado in ativo.transacao:
+        #    ativo.logfilesimples.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.tempo_msc)+";"+str(dado.pcompra1)+";"+str(dado.compra1)+";"+str(dado.pcompra2)+";"+str(dado.compra2)+";"+str(dado.pcompra3)+";"+str(dado.compra3)+";"+str(dado.pcompra4)+";"+str(dado.compra4)+";"+str(dado.pcompra5)+";"+str(dado.compra5)+";"+str(dado.pvenda1)+";"+str(dado.venda1)+";"+str(dado.pvenda2)+";"+str(dado.venda2)+";"+str(dado.pvenda3)+";"+str(dado.venda3)+";"+str(dado.pvenda4)+";"+str(dado.venda4)+";"+str(dado.pvenda5)+";"+str(dado.venda5))
+        #    ativo.logfilesimples.write("\r\n")
+        #ativo.logfilesimples.flush()
+        #ativo.logfilesimples.close()
         
         
         
@@ -863,8 +863,6 @@ class Grupo_ativos(object):
         resultado_trades.flush()
         resultado_trades.close()
 
-
-
                
     def atualizar_gqt(self,*linha):
         #deleta o timestamp
@@ -881,11 +879,39 @@ class Grupo_ativos(object):
             temp2.volume = int(linha[7])#4 - volume
             temp2.comprador = int(linha[5])#7 - comprador
             temp2.vendedor = int(linha[6])#8 - vendedor
-            temp2.tempo_msc = int(linha[-1])#13 - tempo_msc
             temp2.direcao = linha[11]
             temp2.direto = linha[10]
-            ativo.transacao_gqt.append(temp2)
-    
+            if not ativo.transacao_gqt:
+                ativo.transacao_gqt.append(temp2)
+            elif temp2.id < ativo.transacao_gqt[-1].id:
+                ativo.transacao_gqt.append(temp2)
+            else:
+                return 0                
+        if temp2.id == 1:
+            leng = len(ativo.transacao_gqt) -1
+            ativo.transacao_gqt = ativo.transacao_gqt[::-1]
+            for x in range(0,leng):
+                ativo.transacao_gqt[x].id = x+1    
+            for x in range(0,leng):
+            #verifica se o id não existe
+                #print(x,temp2.id, len(ativo.transacao)-1,ativo.transacao[x+1].id,temp2.id,ativo.transacao[x].id)
+                #input("")
+                if x in range(4880,4890):
+                    print(x,ativo.transacao[x-1].id+1,ativo.transacao[x].id)
+                    print(x > 0 and int(ativo.transacao[x-1].id) + 1 == x+1 and int(ativo.transacao[x].id) != x+1)
+                    input("")
+                
+                if x > 0 and int(ativo.transacao[x-1].id) + 1 == x+1 and int(ativo.transacao[x].id) != x+1:
+                    ativo.transacao.insert(x,ativo.transacao_gqt[x])
+                #verifica se é bugado ou direto
+                if ativo.transacao[x].id == x+1:
+                    if ativo.transacao[x].bug == 'bugado' or ativo.transacao[x].direcao == "I":
+                        ativo.transacao[x].direcao = ativo.transacao_gqt[x].direcao
+                        if ativo.transacao_gqt[x].direto == '0':
+                            ativo.transacao[x].direto = "N"
+                        else: ativo.transacao[x].direto = "S"
+                print(x,ativo.transacao[x].id)
+                    
     
     def atualizar_dados(self,*linha):
         #adiciona o valor do timestamp em milisegundos
@@ -944,6 +970,7 @@ class Grupo_ativos(object):
             #self.add_transacao(linha[1],*ativo.dado_bruto)
             ativo.novo_negocio = False
             return 1
+
 
     def atualizar_book(self,*linha):
         #deleta o timestamp

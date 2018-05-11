@@ -13,7 +13,7 @@ dir_trabalho = "/media/sf_Dados_Bolsa_Wall_e/"
 
 datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,4),datetime.date(2018,4,4))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
-ativos_selecionados = ["DOLK18","PETR4"]##"PETR4"]
+ativos_selecionados = ["PETR4"]##"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
 x = 1000
@@ -121,6 +121,7 @@ for nome_arquivo in datafiles:
                     #print(e)
             except Exception as e:
                 print(str(e))
+                raise
                 continue            
         if linha[1] == "T":
             #if linha[3] == "88" and linha[4] == "F":
@@ -145,6 +146,7 @@ for nome_arquivo in datafiles:
                     grupo_ativos.atualizar_dados(*linha)
                     #print(e)
             except Exception as e:
+                raise
                 print(str(e))
                 continue
             
@@ -186,9 +188,10 @@ for nome_arquivo in datafiles:
                     grupo_ativos.atualizar_book(*linha)
                     #print(e)
             except Exception as e:
+                raise
                 print(str(e))
                 continue
-            #print("Posição 0 de compra: "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_volume_by_pos(0)))
+            #print("Posirção 0 de compra: "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_volume_by_pos(0)))
             #print("Posição 0 de venda: "+str(ativo.get_ativo("VIVT4").book.get_book("V").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("V").get_volume_by_pos(0)))
             #try:
             #    book_venda = ""

@@ -100,7 +100,7 @@ class Transacao(object):
 
 
 class Ativos(object):
-    def __init__(self,ativo,step = 0.01,x = 1000):
+    def __init__(self,ativo,step = 0.01,x = 1000,gqt = True):
         #armazena a agressão acumulada
         #é atualizada em toda linha que há uma atualização de direção ("V" ou "A")
         self.trade_atual = Trade()
@@ -114,15 +114,7 @@ class Ativos(object):
         self.dado_bruto = [0]*200
         self.book = Book_completo()
         self.vap = VAP()
-        self.agr_real = 0
-        self.logfile = open(nome_arquivo+".pasta"+"/"+str(ativo)+".csv","w")
-        self.logfilesimples = open(nome_arquivo+".pasta"+"/"+str(ativo)+"_SIMPLES.csv","w")
-        self.loggqt = open(nome_arquivo+".pasta"+"/"+str(ativo)+"_GQT.csv","w")
-        self.logvap = open(nome_arquivo+".pasta"+"/"+str(ativo)+"VAP.csv","w")
-        self.logtempo = open(nome_arquivo+".pasta"+"/"+str(ativo)+"TEMPO.csv","w")
-        self.logcandle = open(nome_arquivo+".pasta"+"/"+str(ativo)+"CANDLE.csv","w")
-        self.logcandlep = open(nome_arquivo+".pasta"+"/"+str(ativo)+"CANDLEP.csv","w")
-        self.bruto_separado = open(nome_arquivo+".pasta"+"/"+str(ativo)+"CANDLEP.csv","w")        
+        self.agr_real = 0       
         self.timeslot = [0,[0]]#tempo epoch em segundos / indice da variável transacao
         self.acm_min = 0
         self.acm_max = 0
@@ -135,10 +127,18 @@ class Ativos(object):
         self.indicador_trade = Indicador()
         self.x = x
         self.y = 0
+        self.is_gqt = gqt
         self.book_quebrado = []
+        self.logfile = ""
+        self.logfilesimples = ""
+        self.loggqt = ""
+        self.logvap = ""
+        self.logtempo = ""
+        self.logcandle = ""
+        self.logcandlep = ""
+        self.bruto_separado = ""
         for x in range (0,68400):#quantidade de segundos em 19 horas:
             self.interv_tempo.append([])           
-        self.logvap.write("preco;compra;venda;direto;leilão\r\n")
 
 class Grupo_ativos(object):
     def __init__(self):
@@ -746,7 +746,21 @@ class Grupo_ativos(object):
 
     def gravar_transacoes(self,papel,grupo_ativos):
         ativo = self.get_ativo(papel)
-        ativo.bruto_separado.close()
+        #ativo.bruto_separado.close()
+        if not ativo.transacao_gqt and ativo.is_gqt:
+            print("GQT configurado mas não encontrado, os dados desse dia não serão usados")
+            return False
+        
+        ativo.logfile = open(nome_arquivo+".pasta"+"/"+str(papel)+".csv","w")
+        ativo.logfilesimples = open(nome_arquivo+".pasta"+"/"+str(papel)+"_SIMPLES.csv","w")
+        ativo.loggqt = open(nome_arquivo+".pasta"+"/"+str(papel)+"_GQT.csv","w")
+        ativo.logvap = open(nome_arquivo+".pasta"+"/"+str(papel)+"VAP.csv","w")
+        ativo.logtempo = open(nome_arquivo+".pasta"+"/"+str(papel)+"TEMPO.csv","w")
+        ativo.logcandle = open(nome_arquivo+".pasta"+"/"+str(papel)+"CANDLE.csv","w")
+        ativo.logcandlep = open(nome_arquivo+".pasta"+"/"+str(papel)+"CANDLEP.csv","w")
+        ativo.bruto_separado = open(nome_arquivo+".pasta"+"/"+str(papel)+"CANDLEP.csv","w")
+        ativo.logvap.write("preco;compra;venda;direto;leilão\r\n")
+
         #inicio = datetime.datetime.now()
         #df = pd.DataFrame()
         #print (df)
@@ -909,6 +923,7 @@ class Grupo_ativos(object):
             else:
                 return 0                
         if temp2.id == 1:
+            print("Registro GQT realizado, iniciando correções...")
             leng = len(ativo.transacao_gqt) -1
             ativo.transacao_gqt = ativo.transacao_gqt[::-1]
             for x in range(0,leng):
@@ -935,7 +950,7 @@ class Grupo_ativos(object):
                         ativo.transacao[x].direto = ativo.transacao_gqt[x].direto
                         ativo.transacao[x].bug = "recuperado_gqt"
                 #print(x,ativo.transacao[x].id)
-                    
+            print("Correções finalizadas.")        
     
     def atualizar_dados(self,*linha):
         #adiciona o valor do timestamp em milisegundos

@@ -747,9 +747,9 @@ class Grupo_ativos(object):
     def gravar_transacoes(self,papel,grupo_ativos):
         ativo = self.get_ativo(papel)
         #ativo.bruto_separado.close()
-        if not ativo.transacao_gqt and ativo.is_gqt:
-            print("GQT configurado mas não encontrado, os dados desse dia não serão usados")
-            return False
+        #if not ativo.transacao_gqt and ativo.is_gqt:
+        #    print("GQT configurado mas não encontrado, os dados desse dia não serão usados")
+        #    return False
         
         ativo.logfile = open(nome_arquivo+".pasta"+"/"+str(papel)+".csv","w")
         ativo.logfilesimples = open(nome_arquivo+".pasta"+"/"+str(papel)+"_SIMPLES.csv","w")
@@ -940,15 +940,15 @@ class Grupo_ativos(object):
                         ativo.transacao.insert(x,ativo.transacao_gqt[x])
                         continue
                         #print(ativo.transacao[-1].id,x)
+                #verifica se é bugado ou direto
+                    if ativo.transacao[x].id == x+1:
+                        if ativo.transacao[x].bug == 'bugado' or ativo.transacao[x].direcao == "I":
+                            ativo.transacao[x].direcao = ativo.transacao_gqt[x].direcao
+                            ativo.transacao[x].direto = ativo.transacao_gqt[x].direto
+                            ativo.transacao[x].bug = "recuperado_gqt"
                 except:
                     ativo.transacao.insert(x,ativo.transacao_gqt[x])
                     continue
-                #verifica se é bugado ou direto
-                if ativo.transacao[x].id == x+1:
-                    if ativo.transacao[x].bug == 'bugado' or ativo.transacao[x].direcao == "I":
-                        ativo.transacao[x].direcao = ativo.transacao_gqt[x].direcao
-                        ativo.transacao[x].direto = ativo.transacao_gqt[x].direto
-                        ativo.transacao[x].bug = "recuperado_gqt"
                 #print(x,ativo.transacao[x].id)
             print("Correções finalizadas.")        
     

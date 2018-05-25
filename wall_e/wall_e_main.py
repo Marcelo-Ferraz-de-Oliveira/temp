@@ -232,39 +232,40 @@ rodar()
 
 
 #inicia o sistema para coletar os dados do gqt após âs 18:30
-print("Iniciando o gqt em: "+str(datetime.now()))
-stdout.flush()
-telconn = pexpect.spawn("telnet datafeed1.cedrofinances.com.br 81")
-telconn.logfile_read=TimestampedFile(open(workdir+"/dado_bruto.log","a"))
-telconn.delaybeforesend = 0
-telconn.expect(".")
-telconn.sendline("")
-telconn.expect(":")
-telconn.sendline(username)
-telconn.expect(":")
-telconn.sendline(password)
-telconn.expect("d")
+def rodar_gqt():
+    try:
+        print("Iniciando o gqt em: "+str(datetime.now()))
+        stdout.flush()
+        telconn = pexpect.spawn("telnet datafeed1.cedrofinances.com.br 81")
+        telconn.logfile_read=TimestampedFile(open(workdir+"/dado_bruto.log","a"))
+        telconn.delaybeforesend = 0
+        telconn.expect(".")
+        telconn.sendline("")
+        telconn.expect(":")
+        telconn.sendline(username)
+        telconn.expect(":")
+        telconn.sendline(password)
+        telconn.expect("d")
+    except:
+        print("Falha ao conectar gqt em :"+str(datetime.now()))
+        rodar_gqt()
 #faz a requisição de gqt para cada ativo da lista
-step = 50000
-for ativo in ativos:
-    posicao = 0
-    while posicao < 2000000:
-        telconn.sendline("gqt "+ativo+" N "+str(step)+" "+str(posicao)+" 1")
-        posicao += step
-        while 1==1:
-            try:
-                valor = telconn.expect([":E:1",":GQT:",pexpect.TIMEOUT])
-                if valor == 0:
-                    break
-                if valor == 1:
-                    break
-            
-            except Exception as e:
-                print(e)
-                stdout.flush()
-                raise
+    try:    
+        step = 50000
+        for ativo in ativos:
+            posicao = 0
+            while posicao < 2000000:
+                telconn.sendline("gqt "+ativo+" N "+str(step)+" "+str(posicao)+" 1")
+                posicao += step
+                while 1==1:
+                    valor = telconn.expect([":E:1",":GQT:",pexpect.TIMEOUT])
+                    if valor in  (0,1):
+                        break
+    except:
+        print("Falha ao executar o gqt em :"+str(datetime.now()))
+        rodar_gqt()        
 
-
+rodar_gqt()
 
 #Datar e compactar os arquivos
 print("Iniciando gravação dos dados em: "+str(datetime.now()))

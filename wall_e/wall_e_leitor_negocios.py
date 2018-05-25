@@ -11,7 +11,7 @@ import pexpect
 dir_compactados = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/"
 dir_trabalho = "/media/sf_Dados_Bolsa_Wall_e/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,1,25),datetime.date(2018,12,31))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,5,24),datetime.date(2018,12,31))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
 ativos_selecionados = ["PETR4"]##"PETR4"]
 

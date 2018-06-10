@@ -4,7 +4,7 @@ Created on 9 de nov de 2017
 @author: marcelo
 '''
 import datetime
-from tkinter import *
+#from tkinter import *
 from os import listdir
 
 
@@ -107,13 +107,13 @@ def converter_utc(tempo_epoch):
 
 
 
-
 class Preco_grafico(object):
     def __init__(self,root):
-        self.canvas = Canvas(root,height=10,width=900)
-        self.label = Label(root,text=str(0),height=1)
-        self.label2 = Label(root,text=str(0),height=1)
-        self.hora = Label(root,text=str(0),height=1)
+        pass
+        #self.canvas = Canvas(root,height=10,width=900)
+        #self.label = Label(root,text=str(0),height=1)
+        #self.label2 = Label(root,text=str(0),height=1)
+        #self.hora = Label(root,text=str(0),height=1)
 
 class Janela:
     def __init__(self, root):

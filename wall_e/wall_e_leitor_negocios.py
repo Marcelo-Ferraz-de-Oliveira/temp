@@ -6,12 +6,13 @@
 from wall_e import wall_e_funcoes
 from wall_e.wall_e_funcoes import * 
 import pexpect
+from builtins import None
 
 #Abre o arquivo com os dados brutos
-dir_compactados = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/"
-dir_trabalho = "/media/sf_Dados_Bolsa_Wall_e/"
+dir_compactados = "/home/marcelo/Dados_Bolsa_Wall_e/"
+dir_trabalho = "/home/marcelo/Dados_Bolsa_Wall_e/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,5,24),datetime.date(2018,12,31))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,7),datetime.date(2018,5,30))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
 ativos_selecionados = ["PETR4"]##"PETR4"]
 
@@ -55,6 +56,7 @@ for nome_arquivo in datafiles:
     parar = 0
     if Debug(): print("comecou")
     linhas = ler(bruto)
+    ultima_linha = None
     for linha in linhas:
     #for linha in bruto:
         #posicao = bruto.tell()
@@ -79,8 +81,9 @@ for nome_arquivo in datafiles:
             for codigo in ativos_registrados:
                 grupo_ativos.fazer_trade(grupo_ativos.get_ativo(codigo),zerar_tudo=True)
             linha = arrumar_linha_timestamp(linha)
-            info = nome_arquivo+"-"+str(converter_utc(linha[0]))
-            print("Falha em: "+info)
+            info = str(converter_utc(linha[0]))
+            print("Falha em: "+info,linha)
+            print("Última linha:",ultima_linha)
             arquivos_bugados.write(info+"\n")
             arquivos_bugados.flush()
             continue
@@ -88,7 +91,6 @@ for nome_arquivo in datafiles:
         #else:
         #    continue
         
-        linha2 = linha
         linha = arrumar_linha_timestamp(linha)
         #print(linha)#if Debug(): print(linha)
         if linha[1] == "SYN":
@@ -206,6 +208,7 @@ for nome_arquivo in datafiles:
             #if parar == 1:
                 #input("")
             #    pass
+        ultima_linha = linha
         del linha
 
     print(nome_arquivo, "tempo de execução: ",datetime.datetime.now()-inicio)
@@ -219,6 +222,5 @@ for nome_arquivo in datafiles:
     print(nome_arquivo, "tempo de gravação: ",datetime.datetime.now()-inicio)
     x += 100
 arquivos_bugados.close()
-
 
 

@@ -186,6 +186,7 @@ ativos.append("ind"+indice)
 ativos.append("win"+indice)
 ativos.append("dol"+dolar)
 ativos.append("wdo"+dolar)
+
 #função para iniciar a leitura dos dados via telnet, usando a biblioteca pexpect, e repassá-los à função TimeStampedFile
 def rodar():
     try:
@@ -274,5 +275,5 @@ print(pexpect.run("mv dado_bruto.log dado_bruto_"+str(datetime.now().date())+".l
 print(pexpect.run("tar -cvjf dado_bruto_"+str(datetime.now().date())+".tar.bz2 dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = 10000))
 print(pexpect.run("truncate -s 0 dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))   
 print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".log dado_bruto.log", cwd=workdir, timeout = -1))   
-print("Encerrado em: "+str(datetime.now()))
+print("Encerrado em: "+str(datetime.now())+"\r\r")
 stdout.flush()

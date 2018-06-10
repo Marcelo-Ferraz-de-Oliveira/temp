@@ -33,9 +33,9 @@ def inicializar(is_debug=False,caminho_arquivo=""):
     global resultado_trades
     global root
     global app
-    root = Tk()        
-    app = Janela(root)
-    root.minsize(width=1000,height=500)
+    #root = Tk()        
+    #app = Janela(root)
+    #root.minsize(width=1000,height=500)
     #root.update()
     debug = is_debug
     nome_arquivo = caminho_arquivo
@@ -747,9 +747,9 @@ class Grupo_ativos(object):
     def gravar_transacoes(self,papel,grupo_ativos):
         ativo = self.get_ativo(papel)
         #ativo.bruto_separado.close()
-        #if not ativo.transacao_gqt and ativo.is_gqt:
-        #    print("GQT configurado mas não encontrado, os dados desse dia não serão usados")
-        #    return False
+        if not ativo.transacao_gqt and ativo.is_gqt:
+            print("GQT configurado mas não encontrado, os dados desse dia não serão usados")
+            return False
         
         ativo.logfile = open(nome_arquivo+".pasta"+"/"+str(papel)+".csv","w")
         ativo.logfilesimples = open(nome_arquivo+".pasta"+"/"+str(papel)+"_SIMPLES.csv","w")
@@ -960,7 +960,7 @@ class Grupo_ativos(object):
         linha = list(linha)
         tempo_temp = converter_utc(linha[0])
         if tempo_temp.time() > datetime.time(self.contador_hora,0,0):
-            print(tempo_temp)
+            print(tempo_temp,datetime.datetime.now())
             self.contador_hora += 1
         del linha[0]
         d = 3
@@ -1000,7 +1000,8 @@ class Grupo_ativos(object):
             #verifica se a linha é de um negócio válido ou registro complento anterior
             if ativo.dado_bruto[2] == "0": return 0
             if ativo.transacao:
-                if ativo.dado_bruto[8] == ativo.transacao[-1].id: return 0
+                #if ativo.dado_bruto[8] == ativo.transacao[-1].id: return 0
+                if int(ativo.dado_bruto[8]) <= int(ativo.transacao[-1].id): return 0 #corrige o bug do de volta para o futuro
             else:
                 if ativo.dado_bruto[8] != "1": return 0
             #verifica o book cancelado em busca do cancelamento de oferta correspondente ao negócio

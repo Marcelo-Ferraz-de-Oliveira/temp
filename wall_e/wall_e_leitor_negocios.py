@@ -84,6 +84,7 @@ for nome_arquivo in datafiles:
             print("Falha em: "+info,linha)
             print("Última linha:",ultima_linha)
             
+            
             arquivos_bugados.write(info+"\n")
             arquivos_bugados.flush()
             continue

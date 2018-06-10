@@ -6,7 +6,6 @@
 from wall_e import wall_e_funcoes
 from wall_e.wall_e_funcoes import * 
 import pexpect
-from builtins import None
 
 #Abre o arquivo com os dados brutos
 dir_compactados = "/home/marcelo/Dados_Bolsa_Wall_e/"

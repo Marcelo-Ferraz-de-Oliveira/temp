@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
+
+
 dia_inicial = 0
 dia_final = 2
 

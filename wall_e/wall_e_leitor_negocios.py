@@ -8,11 +8,12 @@ from wall_e.wall_e_funcoes import *
 import pexpect
 
 #Abre o arquivo com os dados brutos
-dir_compactados = "/home/marcelo/Dados_Bolsa_Wall_e/"
-dir_trabalho = "/home/marcelo/Dados_Bolsa_Wall_e/"
+dir_compactados = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/"
+dir_trabalho = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/Resultados/"
+dir_temp = "/home/marcelo/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,4,7),datetime.date(2018,5,30))
-arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","a")
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,6,22),datetime.date(2018,6,29))
+arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","w")
 ativos_selecionados = ["PETR4"]##"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
@@ -21,14 +22,15 @@ for nome_arquivo in datafiles:
     data = get_data_do_arquivo(nome_arquivo)
     inicio = datetime.datetime.now()  
     arquivo_completo = dir_trabalho+nome_arquivo+".log"
+    arquivo_temp = dir_temp+nome_arquivo+".log"
     try:
-        a = open(arquivo_completo)
+        a = open(arquivo_temp)
         a.close()
         print(nome_arquivo,"já foi extraído!")
     except:
         try:
             print("Iniciando descompressão de ",nome_arquivo) 
-            print(pexpect.run("tar -jxvf  "+nome_arquivo+".tar.bz2 -C "+dir_trabalho, cwd=dir_compactados, timeout = 300000))
+            print(pexpect.run("tar -jxvf  "+nome_arquivo+".tar.bz2 -C "+dir_temp, cwd=dir_compactados, timeout = 300000))
         except:
             print("ARQUIVO NÃO EXISTE!!!!")
             continue
@@ -40,7 +42,7 @@ for nome_arquivo in datafiles:
 
     if Debug(): print("abrindo arquivo")
     try:
-        bruto = open(wall_e_funcoes.nome_arquivo,"r")
+        bruto = open(arquivo_temp,"r")
     except:
         print("Erro ao abrir o arquivo!")
         continue
@@ -76,6 +78,10 @@ for nome_arquivo in datafiles:
         #else:
             #continue
 
+        if len(linha) > 1000:
+            print("Linha muito longa! Será descartada!")
+            continue
+        
         if linha.find("host") != -1 or linha.find("refused") != -1:
             for codigo in ativos_registrados:
                 grupo_ativos.fazer_trade(grupo_ativos.get_ativo(codigo),zerar_tudo=True)
@@ -91,7 +97,8 @@ for nome_arquivo in datafiles:
             #break
         #else:
         #    continue
-        
+        if "Trying" in linha:
+            continue
         linha = arrumar_linha_timestamp(linha)
         #print(linha)#if Debug(): print(linha)
         if linha[1] == "SYN":
@@ -124,8 +131,10 @@ for nome_arquivo in datafiles:
                     #print(e)
             except Exception as e:
                 print(str(e))
-                raise
+                print("Erro na linha:", linha)
+                input("")
                 continue            
+                raise
         if linha[1] == "T":
             #if linha[3] == "88" and linha[4] == "F":
             #    break
@@ -149,10 +158,10 @@ for nome_arquivo in datafiles:
                     grupo_ativos.atualizar_dados(*linha)
                     #print(e)
             except Exception as e:
-                raise
                 print(str(e))
+                print("Erro na linha:".linha)
                 continue
-            
+                raise
             #if parar == 1:
             #    input("")
             #    pass
@@ -191,8 +200,10 @@ for nome_arquivo in datafiles:
                     grupo_ativos.atualizar_book(*linha)
                     #print(e)
             except Exception as e:
-                raise
+                #raise
                 print(str(e))
+                print("Erro na linha:",linha)
+                #raise
                 continue
             #print("Posirção 0 de compra: "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_volume_by_pos(0)))
             #print("Posição 0 de venda: "+str(ativo.get_ativo("VIVT4").book.get_book("V").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("V").get_volume_by_pos(0)))
@@ -219,7 +230,7 @@ for nome_arquivo in datafiles:
     bruto.close()
     del grupo_ativos
         
-    print(pexpect.run("rm  "+nome_arquivo+".log", cwd=dir_trabalho, timeout = -1))
+    print(pexpect.run("rm  "+nome_arquivo+".log", cwd=dir_temp, timeout = -1))
     print(nome_arquivo, "tempo de gravação: ",datetime.datetime.now()-inicio)
     x += 100
 arquivos_bugados.close()

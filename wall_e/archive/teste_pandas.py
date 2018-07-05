@@ -12,8 +12,12 @@ import datetime
 
 
 
+
+
+
+
 dia_inicial = 0
-dia_final = 2
+dia_final = 5
 
 def Str_to_sec(data):
     data_str = str(data)
@@ -47,10 +51,10 @@ def lista_arquivos(pasta):
     
     return filtrada
 
-dir_base = "/media/sf_Dados_Bolsa_Wall_e"
+dir_base = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/Resultados/"
 lista_dir = lista_arquivos(dir_base)
 lista_dir = sorted(lista_dir,key=lambda l:l[0])[dia_inicial:dia_final]
-#print(lista_dir)
+print(lista_dir)
 
 databases = []
 arquivo = []
@@ -98,15 +102,45 @@ def converter_hora(hora_bruta):
         hora = '0'+hora_crua[:1]+':'+hora_crua[1:3]+':'+hora_crua[3:5]
     return hora
 
+def converter_timedelta(x):
+    return x.total_seconds()
+
+for database in databases:
+#    print(corretoras)
+#    input("")
+    pass
+    
 for database in databases:
     #print(database[0])
     df = database[1]
+    compradores = list(dict(df.comprador.value_counts()).keys())
+    vendedores = list(dict(df.vendedor.value_counts()).keys())
+    corretoras = set().union(compradores,vendedores)
+    df['vol_real'] = np.where(df['direcao']=='V',df['Volume'].astype(int),np.where(df['direcao']=='A',df['Volume'].astype(int),0))
+    print(corretoras)
+    print(df.head())
+    input("")
+    for corretora in corretoras:
+        df[str(corretora)+"c"] = np.where(df['comprador'].astype(int)==int(corretora), df['vol_real'],0)
+        df[str(corretora)+"v"] = np.where(df['vendedor'].astype(int)==int(corretora), df['vol_real'].apply(lambda x: x*(-1)),0)
+        df[str(corretora)+"c"] = df[str(corretora)+"c"].cumsum()
+        df[str(corretora)+"v"] = df[str(corretora)+"v"].cumsum()
+        df[str(corretora)] = df[str(corretora)+"c"] + df[str(corretora)+"v"]
+        df.drop([str(corretora)+"c",str(corretora)+"v"],axis=1,inplace=True)
+        #print(df[str(corretora)])
+    #df = df.fillna(method="ffill")
+    print(df.head())
+    print(df.tail())
+    input("")
     #Calcula o acumulado da agressão:
     #print(pd.to_datetime(df['Tempo']))
     #input("")
     df['Tempo'] = pd.to_datetime(database[0]+' '+df['Tempo'].apply(converter_hora))
-    print(df['Tempo'])
-    print(database[2:4])
+    #print(df['Tempo'])
+    range_tempo = pd.date_range(list(df["Tempo"])[0],list(df["Tempo"])[-1],freq="S")
+    #print (range_tempo)
+    #input("")
+    #print(database[2:4])
     df['vol_real'] = np.where(df['direcao']=='V',-df['Volume'].astype(int),np.where(df['direcao']=='A',df['Volume'].astype(int),0))
     df['vol_negativo'] = np.where(df['direcao']=='V',-df['Volume'].astype(int),0)
     df['vol_positivo'] = np.where(df['direcao']=='A',df['Volume'].astype(int),0)
@@ -115,16 +149,24 @@ for database in databases:
     df['acumulado_negativo'] = df.vol_negativo.cumsum()
     df['Preço'] = df['Preço'].astype(float)
     correlato = df[['Preço','acumulado']]
-    print(df.corr(method='spearman').Preço['acumulado'])
+    print("Dia:",database[3])
+    print("Correlação:",df.corr(method='spearman').Preço['acumulado'])
     dfs = df[['Tempo','Preço','acumulado','acumulado_positivo','acumulado_negativo']].drop_duplicates(subset='Tempo',keep='last')
+    dfs.index = pd.DatetimeIndex(dfs.Tempo)
+    dfs = dfs.reindex(range_tempo,fill_value=None)
+    dfs.Tempo = dfs.index
+    dfs = dfs.fillna(method="ffill")
+    #print(dfs[:30])
+    #input("")
     dfs['vol_negativo']=dfs['acumulado_negativo']-dfs['acumulado_negativo'].shift(1)
     dfs['vol_positivo']=dfs['acumulado_positivo']-dfs['acumulado_positivo'].shift(1)
     dfs['dif_data'] = dfs['Tempo'] - dfs['Tempo'].shift(1)
-    print(dfs['dif_data'])
-    input('')
+    dfs['dif_data'] = dfs['dif_data'].apply(converter_timedelta)
+    #print(dfs['dif_data'])
+    #input('')
     dfs['velocidade'] = (dfs['acumulado'] - dfs['acumulado'].shift(1))/dfs['dif_data'] 
-    print(dfs['velocidade'].median(), dfs['velocidade'].std(), dfs['velocidade'].abs().mean())
-    abertura = dfs.Preço.min()
+    #print(dfs['velocidade'].median(), dfs['velocidade'].std(), dfs['velocidade'].abs().mean())
+    abertura = dfs.iloc[0].Preço
     #media = dfs['velocidade'].abs().mean()
     media_velocidade.append(dfs['velocidade'].abs().mean())
     if len(media_velocidade) > 5:
@@ -138,17 +180,28 @@ for database in databases:
     dfs['escore_acm'] = np.where(dfs['escore_acm'] >=5,1,0)
     esim = True
     if esim:
-        dfs['acumulado'].apply(lambda row:row).plot()
         dfs['vol_positivo'].apply(lambda row:20*row).plot()
         dfs['vol_negativo'].apply(lambda row:20*row).plot()
+        dfs['acumulado'].apply(lambda row:row).plot()
         dfs.Preço.apply(lambda row:(row-abertura)*10000000).plot()
+        #dfs['vol_positivo'].apply(np.log).plot()
+        #dfs['vol_negativo'].apply(np.log).plot()
+        #dfs['acumulado'].apply(np.log).plot()
+        #dfs.Preço.apply(np.log).plot()
+        #dfs.escore_acm.apply(lambda row:row*1000000).plot()
         #dfs['escore'].apply(lambda row:row*5000000).plot()
         #dfs['escore_acm'].apply(lambda row:row*2000000).plot()
         plt.grid(True)
         plt.show()
         dfs.to_csv(novo_arquivo,sep=';')
+        #input("")
     
     #break
     #dfs['acumulado'].plot()
     
     #break
+
+
+
+
+

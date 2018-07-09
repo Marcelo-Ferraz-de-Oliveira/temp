@@ -188,7 +188,12 @@ ativos.append("dol"+dolar)
 ativos.append("wdo"+dolar)
 
 #função para iniciar a leitura dos dados via telnet, usando a biblioteca pexpect, e repassá-los à função TimeStampedFile
-def rodar():
+print("Iniciando em: "+str(datetime.now()))
+stdout.flush()
+while True:
+    if datetime.now().time() >= time(18,30,0):#encerra o sistema às 18:30 - horário de Brasília
+        #telconn.close()
+        break
     try:
         print("Conectando em: "+str(datetime.now()))
         stdout.flush()
@@ -209,31 +214,30 @@ def rodar():
     except:
         print("Falha na inicialização em: "+str(datetime.now()))
         stdout.flush()
-        rodar()
+        continue
     while True:
         try:
             telconn.expect("\n")
         except pexpect.TIMEOUT:#pode ocorrer timeout caso não sejam obtidas nov$
             print("Timeout em: "+str(datetime.now()))
             stdout.flush()
-            rodar()#verifiquei que só dá timeout quando o sistema buga, então pode rodar de novo
+            break#verifiquei que só dá timeout quando o sistema buga, então pode rodar de novo
             pass
         except Exception as e:#em caso de outra exceção (como a queda do sistem$
             print("Falha em: "+str(datetime.now()))
             stdout.flush()
             #print(e)
-            rodar()
+            break
         if datetime.now().time() >= time(18,30,0):#encerra o sistema às 18:30 - horário de Brasília
             telconn.close()
             break
 
-print("Iniciando em: "+str(datetime.now()))
-stdout.flush()
-rodar()
+
+#rodar()
 
 
 #inicia o sistema para coletar os dados do gqt após âs 18:30
-def rodar_gqt():
+while True:
     try:
         print("Iniciando o gqt em: "+str(datetime.now()))
         stdout.flush()
@@ -249,7 +253,7 @@ def rodar_gqt():
         telconn.expect("d")
     except:
         print("Falha ao conectar gqt em :"+str(datetime.now()))
-        rodar_gqt()
+        continue
 #faz a requisição de gqt para cada ativo da lista
     try:    
         step = 50000
@@ -264,9 +268,9 @@ def rodar_gqt():
                         break
     except:
         print("Falha ao executar o gqt em :"+str(datetime.now()))
-        rodar_gqt()        
+        continue        
 
-rodar_gqt()
+#rodar_gqt()
 
 #Datar e compactar os arquivos
 print("Iniciando gravação dos dados em: "+str(datetime.now()))

@@ -266,6 +266,7 @@ while True:
                     valor = telconn.expect([":E:1",":GQT:",pexpect.TIMEOUT])
                     if valor in  (0,1):
                         break
+        break
     except:
         print("Falha ao executar o gqt em :"+str(datetime.now()))
         continue        
@@ -277,7 +278,7 @@ print("Iniciando gravação dos dados em: "+str(datetime.now()))
 stdout.flush()
 print(pexpect.run("mv dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))
 print(pexpect.run("tar -cvjf dado_bruto_"+str(datetime.now().date())+".tar.bz2 dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = 10000))
-print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".tar.bz2 /wall_e/dados/Dados_Bolsa_Wall_e/", cwd=workdir, timeout = -1))   
+print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".tar.bz2 /wall_e/drive/Dados_Bolsa_Wall_e/", cwd=workdir, timeout = -1))   
 print(pexpect.run("truncate -s 0 dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))   
 print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".log dado_bruto.log", cwd=workdir, timeout = -1))   
 print("Encerrado em: "+str(datetime.now())+"\r\r")

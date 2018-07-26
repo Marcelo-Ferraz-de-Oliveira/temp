@@ -71,6 +71,7 @@ class Transacao(object):
         self.trade_gain = 0.0
         self.trade_resultado = 0.0
         self.ordem_orig = 0
+        self.estado = ""
         self.vol_ts = 0#volume total por segundo
         self.vol_vs = 0#volume de venda por segundo
         self.vol_cs = 0#volume de compra por segundo
@@ -443,6 +444,7 @@ class Grupo_ativos(object):
         else:
             temp2 = Transacao()'''
         temp2 = Transacao()
+        temp2.estado = str(negocio[88])
         temp2.nome = str(nome_ativo)#0
         temp2.id = int(negocio[8])#1
         temp2.tempo = int(negocio[5])#2
@@ -822,10 +824,10 @@ class Grupo_ativos(object):
         
         
         
-        ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
+        ativo.logfilesimples.write("ativo;id negócio;Tempo;Preço;Volume;Bid;Ask;comprador;vendedor;direcao;direto;estado;tempo_msc;pcompra1;compra1;pcompra2;compra2;pcompra3;compra3;pcompra4;compra4;pcompra5;compra5;pvenda1;venda1;pvenda2;venda2;pvenda3;venda3;pvenda4;venda4;pvenda5;venda5")
         ativo.logfilesimples.write("\r\n")
         for dado in ativo.transacao:
-            ativo.logfilesimples.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.tempo_msc)+";"+str(dado.pcompra1)+";"+str(dado.compra1)+";"+str(dado.pcompra2)+";"+str(dado.compra2)+";"+str(dado.pcompra3)+";"+str(dado.compra3)+";"+str(dado.pcompra4)+";"+str(dado.compra4)+";"+str(dado.pcompra5)+";"+str(dado.compra5)+";"+str(dado.pvenda1)+";"+str(dado.venda1)+";"+str(dado.pvenda2)+";"+str(dado.venda2)+";"+str(dado.pvenda3)+";"+str(dado.venda3)+";"+str(dado.pvenda4)+";"+str(dado.venda4)+";"+str(dado.pvenda5)+";"+str(dado.venda5))
+            ativo.logfilesimples.write(str(dado.nome)+";"+str(dado.id)+";"+str(dado.tempo)+";"+str(dado.preco)+";"+str(dado.volume)+";"+str(dado.bid)+";"+str(dado.ask)+";"+str(dado.comprador)+";"+str(dado.vendedor)+";"+str(dado.direcao)+";"+str(dado.direto)+";"+str(dado.estado)+";"+str(dado.tempo_msc)+";"+str(dado.pcompra1)+";"+str(dado.compra1)+";"+str(dado.pcompra2)+";"+str(dado.compra2)+";"+str(dado.pcompra3)+";"+str(dado.compra3)+";"+str(dado.pcompra4)+";"+str(dado.compra4)+";"+str(dado.pcompra5)+";"+str(dado.compra5)+";"+str(dado.pvenda1)+";"+str(dado.venda1)+";"+str(dado.pvenda2)+";"+str(dado.venda2)+";"+str(dado.pvenda3)+";"+str(dado.venda3)+";"+str(dado.pvenda4)+";"+str(dado.venda4)+";"+str(dado.pvenda5)+";"+str(dado.venda5))
             ativo.logfilesimples.write("\r\n")
         ativo.logfilesimples.flush()
         ativo.logfilesimples.close()

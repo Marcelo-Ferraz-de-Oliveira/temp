@@ -12,7 +12,7 @@ dir_compactados = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/"
 dir_trabalho = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/Resultados/"
 dir_temp = "/home/marcelo/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,6,22),datetime.date(2018,6,29))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,2,1),datetime.date(2018,6,29))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","w")
 ativos_selecionados = ["PETR4"]##"PETR4"]
 

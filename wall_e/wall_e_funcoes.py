@@ -110,6 +110,7 @@ class Ativos(object):
         self.mudou_bid_ask = ""
         self.transacao = []
         self.transacao_gqt = []
+        self.transacao_df = pd.DataFrame()
         self.ind_transacao = 0
         self.book_cancelado = []
         self.dado_bruto = [0]*200
@@ -488,6 +489,9 @@ class Grupo_ativos(object):
         temp2.pcompra3 = ativo.book.get_book('A').get_preco_by_pos(2)
         temp2.pcompra4 = ativo.book.get_book('A').get_preco_by_pos(3)
         temp2.pcompra5 = ativo.book.get_book('A').get_preco_by_pos(4)
+        
+        teste_dict = vars(temp2)
+        #ativo.transacao_df = ativo.transacao_df.append(pd.DataFrame(teste_dict, columns=list(teste_dict.keys()),index=[teste_dict['id']]))
 
         #if negocio[2] != "0" and negocio[132] != "0" and negocio[132] != 0: #and int(negocio[5])<165500:
             #if temp.direcao == "V":
@@ -500,6 +504,7 @@ class Grupo_ativos(object):
             ativo.indicador_trade.divisores = [1,1,1,ativo.primeira_hora/ativo.x,ativo.primeira_hora/(ativo.x*3.1)]
         ativo.acm_total += int(temp2.volume)    #input("")
 
+    
     def atualizar_indicadores(self,ativo,direcao,pos=-1):
         #hora = int(ativo.transacao[pos].tempo)
         if len(ativo.transacao) > 1:
@@ -752,7 +757,9 @@ class Grupo_ativos(object):
         if not ativo.transacao_gqt and ativo.is_gqt:
             print("GQT configurado mas não encontrado, os dados desse dia não serão usados")
             return False
-        
+        #print("gravando_gqt em ",datetime.now())
+        ativo.transacao_df.to_csv(nome_arquivo+".pasta"+"/"+str(papel)+"_DF.csv")
+        #print('gqt gravado em ',datetime.now())
         ativo.logfile = open(nome_arquivo+".pasta"+"/"+str(papel)+".csv","w")
         ativo.logfilesimples = open(nome_arquivo+".pasta"+"/"+str(papel)+"_SIMPLES.csv","w")
         ativo.loggqt = open(nome_arquivo+".pasta"+"/"+str(papel)+"_GQT.csv","w")

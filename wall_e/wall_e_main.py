@@ -180,7 +180,7 @@ while True:
     try:
         print("Conectando em: "+str(datetime.now()))
         stdout.flush()
-        telconn = pexpect.spawn("telnet datafeed2.cedrofinances.com.br 81")
+        telconn = pexpect.spawn("telnet datafeed1.cedrofinances.com.br 81")
         telconn.logfile_read=TimestampedFile(open(workdir+"/dado_bruto.log","a"))
         telconn.delaybeforesend = 0
         telconn.expect(".")
@@ -194,6 +194,7 @@ while True:
         for ativo in ativos:
             telconn.sendline("sqt "+ativo)
             telconn.sendline("bqt "+ativo)
+            
     except:
         print("Falha na inicialização em: "+str(datetime.now()))
         stdout.flush()

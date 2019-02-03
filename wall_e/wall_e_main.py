@@ -1,10 +1,23 @@
-
+'''
+Sistema para obtenção e registro de dados de ativos da BMF&BOVESPA
+O sistema registra os dados de negócio e livro de ofertas dos ativos selecionados
+Os dados são obtidos em "tempo real" através do sistema de cotações Cedro Crystal Datafeed
+A conexão é feita via telnet nativo do linux, usando a biblioteca pexpect
+Informações sobre o sistema estã disponíveis em: http://promo.cedrotech.com/crystal-data-feed-solucoes-de-market-data
+Para entender a sintaxe do sistema, acesse: http://files.cedrotech.com/Downloads/Cedro/documentos/Documentacao_Crystal_Data_Feed.pdf
+'''
 
 import pexpect
 from datetime import datetime, time
 from sys import stdout
-
-
+from time import sleep
+'''
+Faz a leitura do arquivo wall_e.cfg, com as informações sobre o diretório raiz, usuário e senha do sistema
+exemplo de wall_e.cfg:
+workdir:/wall_e
+username:userdeteste
+password:12345
+'''
 conf={}
 for line in open("wall_e.cfg"):
     (key,val) = line.replace("\n","").split(":")
@@ -15,6 +28,10 @@ username = conf["username"]#edite inserindo seu usuário de acesso ao Crystal Da
 password = conf["password"]#edite inserindo sua senha de acesso ao Crystal DataFeed
 logfile = open(workdir+"/log.txt", "a")
 
+'''
+Classe para receber os dados, adicionar um timestamp no formato unix_epoch em microsegundos ao fina de cada linha, e salvar em arquivo. 
+A classe recebe como parâmetro um file handle e ela própria simula um, uma vez que o pexpect espera receber um file handle como parâmetro
+'''
 
 class TimestampedFile(object):
     def __init__(self,file):
@@ -51,6 +68,18 @@ if now >= datetime(2018,10,14) and now < datetime(2018,12,12):
     indice = str("z18")
 if now >= datetime(2018,12,12) and now < datetime(2019,2,13):
     indice = str("g19")
+if now >= datetime(2019,2,13) and now < datetime(2019,4,17):
+    indice = str("j19")
+if now >= datetime(2019,4,17) and now < datetime(2019,6,12):
+    indice = str("m19")
+if now >= datetime(2019,6,12) and now < datetime(2019,8,14):
+    indice = str("q19")
+if now >= datetime(2019,8,14) and now < datetime(2019,10,16):
+    indice = str("v19")
+if now >= datetime(2019,10,16) and now < datetime(2019,12,18):
+    indice = str("z19")
+if now >= datetime(2019,12,18) and now < datetime(2020,2,12):
+    indice = str("g20")
 
 #gera automaticamente o final do código do Dólar Futuro
 if now >= datetime(2017,7,30) and now < datetime(2017,8,31):
@@ -87,6 +116,33 @@ if now >= datetime(2018,10,31) and now < datetime(2018,11,30):
     dolar = str("z18")
 if now >= datetime(2018,11,30) and now < datetime(2018,12,28):
     dolar = str("f19")
+if now >= datetime(2018,12,28) and now < datetime(2019,1,31):
+    dolar = str("g19")
+if now >= datetime(2019,1,31) and now < datetime(2019,2,28):
+    dolar = str("h19")
+if now >= datetime(2019,2,28) and now < datetime(2019,3,29):
+    dolar = str("j19")
+if now >= datetime(2019,3,29) and now < datetime(2019,4,30):
+    dolar = str("k19")
+if now >= datetime(2019,4,30) and now < datetime(2019,5,31):
+    dolar = str("m19")
+if now >= datetime(2019,5,31) and now < datetime(2019,6,28):
+    dolar = str("n19")
+if now >= datetime(2019,6,28) and now < datetime(2019,7,31):
+    dolar = str("q19")
+if now >= datetime(2019,7,31) and now < datetime(2019,8,30):
+    dolar = str("u19")
+if now >= datetime(2019,8,30) and now < datetime(2019,9,30):
+    dolar = str("v19")
+if now >= datetime(2019,9,30) and now < datetime(2019,10,31):
+    dolar = str("x19")
+if now >= datetime(2019,10,31) and now < datetime(2019,11,29):
+    dolar = str("z19")
+if now >= datetime(2019,11,29) and now < datetime(2019,12,30):
+    dolar = str("f20")
+if now >= datetime(2019,12,30) and now < datetime(2020,1,31):
+    dolar = str("f20")
+
 
 #matriz com todos os ativos a serem registrados
 #todos os ativos da composição do IBOVESPA, contratos de Índice e Dólar, padrão e mini, e contratos de DI futuro de maior liquidez
@@ -194,37 +250,24 @@ while True:
         for ativo in ativos:
             telconn.sendline("sqt "+ativo)
             telconn.sendline("bqt "+ativo)
-            
     except:
         print("Falha na inicialização em: "+str(datetime.now()))
         stdout.flush()
-        telconn.close()
         continue
     while True:
         try:
             telconn.expect("\n")
         except pexpect.TIMEOUT:#pode ocorrer timeout caso não sejam obtidas nov$
             print("Timeout em: "+str(datetime.now()))
-            try:
-                telconn.sendline("quit")
-            except:
-                print("Não deu quit")
-                pass
             stdout.flush()
-            telconn.close()
             break#verifiquei que só dá timeout quando o sistema buga, então pode rodar de novo
+            pass
         except Exception as e:#em caso de outra exceção (como a queda do sistem$
             print("Falha em: "+str(datetime.now()))
             stdout.flush()
             #print(e)
-            telconn.close()
             break
         if datetime.now().time() >= time(18,30,0):#encerra o sistema às 18:30 - horário de Brasília
-            try:
-                telconn.sendline("quit")
-            except:
-                print("Não deu quit")
-                pass
             telconn.close()
             break
 
@@ -237,7 +280,7 @@ while True:
     try:
         print("Iniciando o gqt em: "+str(datetime.now()))
         stdout.flush()
-        telconn = pexpect.spawn("telnet datafeed2.cedrofinances.com.br 81")
+        telconn = pexpect.spawn("telnet datafeed1.cedrofinances.com.br 81")
         telconn.logfile_read=TimestampedFile(open(workdir+"/dado_bruto.log","a"))
         telconn.delaybeforesend = 0
         telconn.expect(".")
@@ -249,7 +292,6 @@ while True:
         telconn.expect("d")
     except:
         print("Falha ao conectar gqt em :"+str(datetime.now()))
-        telconn.close()
         continue
 #faz a requisição de gqt para cada ativo da lista
     try:    
@@ -257,25 +299,37 @@ while True:
         for ativo in ativos:
             posicao = 0
             while posicao < 2000000:
+                #sleep(0.1)
                 telconn.sendline("gqt "+ativo+" N "+str(step)+" "+str(posicao)+" 1")
                 posicao += step
                 while 1==1:
                     valor = telconn.expect([":E:1",":GQT:",pexpect.TIMEOUT])
                     if valor in  (0,1):
                         break
+        break
+    #except pexpect.TIMEOUT:
+       # print("Timeout ao executar o gqt em:"+str(datetime.now()))
+       # stdout.flush()
+       # continue
     except:
         print("Falha ao executar o gqt em :"+str(datetime.now()))
-        telconn.close()
-        continue       
+        stdout.flush()
+        continue        
 
 #rodar_gqt()
 
 #Datar e compactar os arquivos
+try:
+    telconn.sendline("fim de arquivo")
+    telconn.close()
+except:
+    print("Erro ao gravar o fim de arquivo")
+    pass
 print("Iniciando gravação dos dados em: "+str(datetime.now()))
 stdout.flush()
 print(pexpect.run("mv dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))
 print(pexpect.run("tar -cvjf dado_bruto_"+str(datetime.now().date())+".tar.bz2 dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = 10000))
-print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".tar.bz2 /wall_e/dados/Dados_Bolsa_Wall_e/", cwd=workdir, timeout = -1))   
+print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".tar.bz2 /wall_e/drive/Dados_Bolsa_Wall_e/", cwd=workdir, timeout = 10000))   
 print(pexpect.run("truncate -s 0 dado_bruto.log dado_bruto_"+str(datetime.now().date())+".log", cwd=workdir, timeout = -1))   
 print(pexpect.run("mv dado_bruto_"+str(datetime.now().date())+".log dado_bruto.log", cwd=workdir, timeout = -1))   
 print("Encerrado em: "+str(datetime.now())+"\r\r")

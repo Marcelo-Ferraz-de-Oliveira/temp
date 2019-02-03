@@ -6,19 +6,50 @@
 from wall_e import wall_e_funcoes
 from wall_e.wall_e_funcoes import * 
 import pexpect
+import multiprocessing
+from flask import Flask, render_template, request, redirect, session, flash, url_for, jsonify
+from tornado.gen import multi
+import gc
+#import gevent
+
+preco = multiprocessing.Value('f',0.0)
+
+
+app = Flask(__name__)
+app.secret_key = 'enois'
+
+#import logging
+#log = logging.getLogger('werkzeug')
+#log.setLevel(logging.ERROR)
+
+@app.route('/')
+def index():
+
+    #return render_template('lista.html, titulo="Jogos",jogos=lista)
+    return render_template('index.html')
+
+
+@app.route('/_add_numbers')
+def add_numbers():
+    global preco
+    return jsonify(result=round(preco.value,2))
+
 
 #Abre o arquivo com os dados brutos
 dir_compactados = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/"
-dir_trabalho = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/Resultados/"
-dir_temp = "/home/marcelo/"
+dir_trabalho = "/media/marcelo/138E6D2D5F1BC04B/Resultados/"
+dir_temp = "/media/marcelo/138E6D2D5F1BC04B/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,8,1),datetime.date(2018,12,31))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,10,25),datetime.date(2018,12,31))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","w")
-ativos_selecionados = ["PETR4"]##"PETR4"]
+ativos_selecionados = ["PETR4","VALE3","ABEV3","B3SA3","BBAS3","BBDC4","IBUT4","BOVA11","BFRS3","ITSA4","PETR3","BBDC3","CSNA3","EMBR3","GOAU4","USIM5","DOL","WDO","IND","WIN"]##"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
-x = 1000
-for nome_arquivo in datafiles:
+
+def Ler_negocio(nome_arquivo,dir_trabalho,dir_temp):
+
+    print("começando",nome_arquivo)
+    x = 1000
     data = get_data_do_arquivo(nome_arquivo)
     inicio = datetime.datetime.now()  
     arquivo_completo = dir_trabalho+nome_arquivo+".log"
@@ -33,7 +64,7 @@ for nome_arquivo in datafiles:
             print(pexpect.run("tar -jxvf  "+nome_arquivo+".tar.bz2 -C "+dir_temp, cwd=dir_compactados, timeout = 300000))
         except:
             print("ARQUIVO NÃO EXISTE!!!!")
-            continue
+            return 0
         print(nome_arquivo,"tempo de descompressão: ",datetime.datetime.now()-inicio)
     inicio = datetime.datetime.now()  
     
@@ -45,7 +76,7 @@ for nome_arquivo in datafiles:
         bruto = open(arquivo_temp,"r")
     except:
         print("Erro ao abrir o arquivo!")
-        continue
+        return 0
     grupo_ativos = Grupo_ativos()
     if Debug(): print("criando os objetos")
     #for codigo in ativos_registrados:
@@ -59,6 +90,7 @@ for nome_arquivo in datafiles:
     linhas = ler(bruto)
     ultima_linha = None
     for linha in linhas:
+        if "fim de arquivo" in linha: break
     #for linha in bruto:
         #posicao = bruto.tell()
         #linhas = ler(bruto)
@@ -107,9 +139,8 @@ for nome_arquivo in datafiles:
             temp = linha[1].split(" ")
             temp[1] = temp[1].upper()
             if not grupo_ativos.get_ativo(temp[1]):
-                if temp[1] in ativos_selecionados:#comente para rodar todos os ativos no arquivo 
-                    if temp[1] not in ativos_rejeitados:    
-                        #if "DOL" in temp[1] or "WDO" in temp[1] or "IND" in temp[1] or "WIN" in temp[1]:
+                if ("18" in temp[1]) or (temp[1] in ativos_selecionados):#comente para rodar todos os ativos no arquivo 
+                    #if temp[1] not in ativos_rejeitados:    
                         #    pass
                             #grupo_ativos.set_ativo(temp[1],step = 5, x = x)
                         #else:
@@ -124,7 +155,7 @@ for nome_arquivo in datafiles:
         #verifica se a primeira linha corresponde a uma informação de trade
         if linha[1] == "V":
             try:
-                if linha[2] in ativos_selecionados:
+                if linha[2] in ativos_registrados:
                     #grupo_ativos.gravar_bruto(linha[2],linha2)
                     if Debug(): print(str(linha))
                     grupo_ativos.atualizar_gqt(*linha)
@@ -132,7 +163,7 @@ for nome_arquivo in datafiles:
             except Exception as e:
                 print(str(e))
                 print("Erro na linha:", linha)
-                input("")
+                #input("")
                 continue            
                 raise
         if linha[1] == "T":
@@ -145,21 +176,17 @@ for nome_arquivo in datafiles:
                 #parar = 1
             #    pass
             #print(str(linha))
-            '''try:
-                if linha[2] == 'PETR4':
-                    print(vars(grupo_ativos.get_ativo(linha[2]).transacao[1]))
-                    input("")
-            except:
-                pass'''
             try:
-                if linha[2] in ativos_selecionados:
+                if linha[2] in ativos_registrados:
                     #grupo_ativos.gravar_bruto(linha[2],linha2)
                     if Debug(): print(str(linha))
                     grupo_ativos.atualizar_dados(*linha)
+                    #preco_externo.value = grupo_ativos.get_ativo(linha[2]).transacao[-1].preco
+                    #input("")
                     #print(e)
             except Exception as e:
                 print(str(e))
-                print("Erro na linha:".linha)
+                print("Erro na linha:",linha)
                 continue
                 raise
             #if parar == 1:
@@ -194,7 +221,7 @@ for nome_arquivo in datafiles:
             #    pass
             #print(str(linha))
             try:
-                if linha[2] in ativos_selecionados:
+                if linha[2] in ativos_registrados:
                     #grupo_ativos.gravar_bruto(linha[2],linha2)
                     if Debug(): print(str(linha))
                     grupo_ativos.atualizar_book(*linha)
@@ -205,7 +232,7 @@ for nome_arquivo in datafiles:
                 print("Erro na linha:",linha)
                 #raise
                 continue
-            #print("Posirção 0 de compra: "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_volume_by_pos(0)))
+            #print("Posirção 0 de compra: "+str(ativo.gnome_arquivoet_ativo("VIVT4").book.get_book("A").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("A").get_volume_by_pos(0)))
             #print("Posição 0 de venda: "+str(ativo.get_ativo("VIVT4").book.get_book("V").get_preco_agrupado())+" - "+str(ativo.get_ativo("VIVT4").book.get_book("V").get_volume_by_pos(0)))
             #try:
             #    book_venda = ""
@@ -227,12 +254,25 @@ for nome_arquivo in datafiles:
     inicio = datetime.datetime.now()
     for codigo in ativos_registrados:
         grupo_ativos.gravar_transacoes(codigo,grupo_ativos)
+        #del grupo_ativos.get_ativo(codigo)
     bruto.close()
     del grupo_ativos
+    gc.collect()
         
     print(pexpect.run("rm  "+nome_arquivo+".log", cwd=dir_temp, timeout = -1))
     print(nome_arquivo, "tempo de gravação: ",datetime.datetime.now()-inicio)
-    x += 100
-arquivos_bugados.close()
+    x += 100 
+
+    
+pool = multiprocessing.Pool(processes=4)
+for nome_arquivo in datafiles:
+    print(nome_arquivo)
+    pool.apply_async(Ler_negocio, args=([nome_arquivo, dir_trabalho, dir_temp]))
+pool.close()
+pool.join()
+
+    #Ler_negocio(nome_arquivo, dir_trabalho, dir_temp)
+#app.run(host = "0.0.0.0",port=8080,debug=False)
+#arquivos_bugados.close()
 
 

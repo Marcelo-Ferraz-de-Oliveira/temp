@@ -6,6 +6,7 @@ Created on 9 de nov de 2017
 import datetime
 #from tkinter import *
 from os import listdir
+from time import sleep
 
 
 
@@ -78,9 +79,20 @@ def Sec_to_str(data):
 
 def ler(arquivo):
     while True:
+        antes = arquivo.tell()
         linha = arquivo.readline()
         if not linha:
+            #break
+            sleep(0.01)
             break
+            continue
+        if '\n' not in linha:
+            #arquivo.seek(antes)
+            sleep(0.01)
+            print("linha sem barra n")
+            print(linha)
+            pass
+            #break
             #continue
         yield linha
 
@@ -98,7 +110,7 @@ def arrumar_linha_timestamp(string):
         except Exception as e:
             print(e)
             print(string)
-            input(" ")
+            #input(" ")
     return temp
 
 def converter_utc(tempo_epoch):

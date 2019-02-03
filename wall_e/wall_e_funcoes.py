@@ -987,7 +987,7 @@ class Grupo_ativos(object):
                         #     ativo.book.get_book("A").entrada[0]
                         if Debug():
                             print(qtde_teorica,sentido_sobra,ativo.dado_bruto[57],ativo.dado_bruto[82])
-                            input("")
+                            #input("")
                 if linha[d] == "47":#indica o mercado inscrito, esse dado só é fornecido na primeira linha de sqt
                     ativo.novo_negocio = False
                 lista = ("88","84","83","82","58","59","56","57")

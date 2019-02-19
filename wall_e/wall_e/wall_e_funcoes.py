@@ -932,7 +932,7 @@ class Grupo_ativos(object):
             else:
                 return 0                
         if temp2.id == 1:
-            print("Registro GQT realizado, iniciando correções...")
+            print("Registro GQT de", linha[1], "realizado, iniciando correções...")
             leng = len(ativo.transacao_gqt) -1
             ativo.transacao_gqt = ativo.transacao_gqt[::-1]
             for x in range(0,leng):
@@ -959,7 +959,7 @@ class Grupo_ativos(object):
                     ativo.transacao.insert(x,ativo.transacao_gqt[x])
                     continue
                 #print(x,ativo.transacao[x].id)
-            print("Correções finalizadas.")        
+            print("Correções de",linha[1],"finalizadas.")        
     
     def atualizar_dados(self,*linha):
         #adiciona o valor do timestamp em milisegundos

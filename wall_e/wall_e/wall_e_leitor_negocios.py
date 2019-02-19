@@ -10,6 +10,8 @@ import multiprocessing
 from flask import Flask, render_template, request, redirect, session, flash, url_for, jsonify
 from tornado.gen import multi
 import gc
+import os
+import glob
 #import gevent
 
 preco = multiprocessing.Value('f',0.0)
@@ -36,21 +38,38 @@ def add_numbers():
 
 
 #Abre o arquivo com os dados brutos
-dir_compactados = "/home/marcelo/Dados/Dados_Bolsa_Wall_e/"
-dir_trabalho = "/media/marcelo/138E6D2D5F1BC04B/Resultados/"
-dir_temp = "/media/marcelo/138E6D2D5F1BC04B/"
+dir_compactados = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/"
+dir_trabalho = "/media/sf_Google_Drive/Dados_Bolsa_Wall_e/Resultados/"
+dir_temp = "/home/marcelo/Documentos/"
 
-datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2018,10,25),datetime.date(2018,12,31))
+datafiles = lista_a_partir(lista_arquivos(dir_compactados),datetime.date(2017,1,1),datetime.date(2019,12,31))
 arquivos_bugados = open(dir_trabalho+"arquivos_bugados.txt","w")
-ativos_selecionados = ["PETR4","VALE3","ABEV3","B3SA3","BBAS3","BBDC4","IBUT4","BOVA11","BFRS3","ITSA4","PETR3","BBDC3","CSNA3","EMBR3","GOAU4","USIM5","DOL","WDO","IND","WIN"]##"PETR4"]
+ativos_selecionados_iniciais = ["PETR4","VALE3","ABEV3","B3SA3","BBAS3","BBDC4","ITUB4","BOVA11","BRFS3","ITSA4","PETR3","BBDC3","CSNA3","EMBR3","GOAU4","USIM5"]##"PETR4"]
 
 #nome_arquivo = "teste_bruto_2017-11-23"
 
-def Ler_negocio(nome_arquivo,dir_trabalho,dir_temp):
+def Ler_negocio(nome_arquivo,dir_trabalho,dir_temp,ativos_selecionados):
+    ativos_prontos = []
+    for ativo in ativos_selecionados:
+        arquivo = dir_trabalho+nome_arquivo+".log.pasta/"+ativo+"*"
+        #print(arquivo)
+        if glob.glob(arquivo):
+            ativos_prontos.append(ativo)
+    #print(ativos_prontos)
+    for ativo in ativos_prontos:
+        #print(ativo)
+        ativos_selecionados.remove(ativo)
+        #print(ativos_selecionados)
+    if not ativos_selecionados:
+        print("Dia já executado! "+nome_arquivo)
+        return 0
+    else:
+        print("Executando leitura de: ",ativos_selecionados)
+        #return 0
 
     print("começando",nome_arquivo)
     x = 1000
-    data = get_data_do_arquivo(nome_arquivo)
+    #data = get_data_do_arquivo(nome_arquivo)
     inicio = datetime.datetime.now()  
     arquivo_completo = dir_trabalho+nome_arquivo+".log"
     arquivo_temp = dir_temp+nome_arquivo+".log"
@@ -82,13 +101,14 @@ def Ler_negocio(nome_arquivo,dir_trabalho,dir_temp):
     #for codigo in ativos_registrados:
     #    ativo.set_ativo(codigo.upper())
     ativos_registrados = []
-    ativos_rejeitados2 = []
-    ativos_rejeitados = []
+    #ativos_rejeitados2 = []
+    #ativos_rejeitados = []
     #Verificando cada linha do arquivo com dados brutos...
-    parar = 0
+    #parar = 0
     if Debug(): print("comecou")
     linhas = ler(bruto)
     ultima_linha = None
+    esta_sqt = 0
     for linha in linhas:
         if "fim de arquivo" in linha: break
     #for linha in bruto:
@@ -135,18 +155,30 @@ def Ler_negocio(nome_arquivo,dir_trabalho,dir_temp):
         #print(linha)#if Debug(): print(linha)
         if linha[1] == "SYN":
             continue
-        if linha[1].find("sqt ") != -1:
+        if (linha[1].find("sqt ") != -1) or (linha[1].find("bqt ") != -1):
+            if esta_sqt == 0: 
+                esta_sqt = 1
             temp = linha[1].split(" ")
             temp[1] = temp[1].upper()
             if not grupo_ativos.get_ativo(temp[1]):
-                if ("18" in temp[1]) or (temp[1] in ativos_selecionados):#comente para rodar todos os ativos no arquivo 
+                if (temp[1] in ativos_selecionados):#comente para rodar todos os ativos no arquivo 
                     #if temp[1] not in ativos_rejeitados:    
                         #    pass
                             #grupo_ativos.set_ativo(temp[1],step = 5, x = x)
                         #else:
                             ativos_registrados.append(temp[1])
-                            grupo_ativos.set_ativo(temp[1],x = x)                            
+                            grupo_ativos.set_ativo(temp[1],x = x)
                             #ativos_selecionados = ativos_registrados#descomente para rodar todos os ativos no arquivo
+        else:
+            if esta_sqt == 1:
+                #print(ativos_registrados)
+                if  not ativos_registrados:
+                    print("Todos os ativos já foram lidos, saindo! ", nome_arquivo)
+                    print(pexpect.run("rm  "+nome_arquivo+".log", cwd=dir_temp, timeout = -1))
+                    return 0
+                else:
+                    esta_sqt = 3
+                    print("Analisando os ativos de : ",nome_arquivo,ativos_registrados)
             if Debug(): print(str(linha))
             if Debug(): print(temp[1])
             if Debug(): print(ativos_registrados)
@@ -264,10 +296,10 @@ def Ler_negocio(nome_arquivo,dir_trabalho,dir_temp):
     x += 100 
 
     
-pool = multiprocessing.Pool(processes=4)
+pool = multiprocessing.Pool(processes=3)
 for nome_arquivo in datafiles:
     print(nome_arquivo)
-    pool.apply_async(Ler_negocio, args=([nome_arquivo, dir_trabalho, dir_temp]))
+    pool.apply_async(Ler_negocio, args=([nome_arquivo, dir_trabalho, dir_temp, ativos_selecionados_iniciais]))
 pool.close()
 pool.join()
 
